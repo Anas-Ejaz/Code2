@@ -5,18 +5,26 @@ using namespace std;
 
 class Item{
     public:
-    Item(){
-        system("cls");
-        cout<<"Item"<<endl;
+    void itemPanel(){
         int option;
         do{
+            system("cls");
+            cout<<"Item"<<endl;
             cout<<endl;
+
             cout<<"1. Add Items"<<endl;
             cout<<"2. View Items"<<endl;
             cout<<"3. Delete Items"<<endl;
             cout<<"4. Admins Portal"<<endl;
             cout<<"Enter Option: ";
             cin>>option;
+            while (cin.fail()) {
+                cin.clear();  
+                while (cin.get() != '\n');
+                    cout<<"Invalid ! Please enter a valid number : ";
+                    cin>>option;
+            }
+
             switch(option){
                 case 1:
                     addItem();
@@ -61,18 +69,26 @@ class Item{
 
 class Employees{
     public:
-    Employees(){
-        system("cls");
-        cout<<"Employee"<<endl;
+    void empPanel(){
         int option;
         do{
+            system("cls");
+            cout<<"Employee"<<endl;
             cout<<endl;
+
             cout<<"1. Add Employee"<<endl;
             cout<<"2. View Employee"<<endl;
             cout<<"3. Remove Employee"<<endl;
             cout<<"4. Admins Portal"<<endl;
             cout<<"Enter Option: ";
             cin>>option;
+            while (cin.fail()) {
+                cin.clear();  
+                while (cin.get() != '\n');
+                    cout<<"Invalid ! Please enter a valid number : ";
+                    cin>>option;
+            }
+
             switch(option){
                 case 1:
                     addEmployees();
@@ -117,25 +133,35 @@ class Employees{
 
 class Admin{
     public:
-    Admin(){
-        system("cls");
-        cout<<"Admin "<<endl;
+    void adminPanel(){
         int option;
         do{
+            system("cls");
+            cout<<"Admin "<<endl;
             cout<<endl;
+            
             cout<<"1. Manage Items"<<endl;
             cout<<"2. Manage Employees"<<endl;
             cout<<"3. Transaction"<<endl;
             cout<<"4. Login Portal"<<endl;
             cout<<"Enter Option: ";
             cin>>option;
+            while (cin.fail()) {
+                cin.clear();  
+                while (cin.get() != '\n');
+                    cout<<"Invalid ! Please enter a valid number : ";
+                    cin>>option;
+            }
+
             switch(option){
                 case 1:
-                    Item item;
+                    Item i;
+                    i.itemPanel();
                     break;
                 
                 case 2:
-                    Employees employees;
+                    Employees e;
+                    e.empPanel();
                     break;
 
                 case 3:
@@ -157,5 +183,6 @@ class Admin{
 };
 
 int main(){
-    Admin admin;
+    Admin a;
+    a.adminPanel();
 }
