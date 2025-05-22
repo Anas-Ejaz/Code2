@@ -1,13 +1,9 @@
  #include <iostream>
 #include <string>
-
 using namespace std;
-
-// Function to validate login credentials
 bool validateLogin(const string& username, const string& password) {
     const string correctUsername = "e-mart";
     const string correctPassword = "12345";
-
     if (username != correctUsername && password != correctPassword) {
         cout << "Both username and password are incorrect!" << endl;
         return false;
@@ -22,13 +18,11 @@ bool validateLogin(const string& username, const string& password) {
     }
     return true;
 }
-
 int main() {
     string username, password;
 
-    cout << "====== E-Mart Login Page ======" << endl;
-
-    // Loop until correct credentials are entered
+    cout << "E-Mart Login Page" << endl;
+ 
     while (true) {
         cout << "Enter username: ";
         cin >> username;
@@ -43,6 +37,5 @@ int main() {
             cout << "Please try again.\n" << endl;
         }
     }
-
     return 0;
 }
