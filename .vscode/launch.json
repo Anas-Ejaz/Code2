@@ -1,17 +1,19 @@
 {
   "version": "0.2.0",
   "configurations": [
+    
     {
-      "name": "C/C++ Runner: Debug Session",
+      "name": "Run FLTK App",
       "type": "cppdbg",
       "request": "launch",
+      "program": "D:/3rd sem/DSA/Project/Code2/anas-app.exe",
       "args": [],
       "stopAtEntry": false,
+      "cwd": "D:/3rd sem/DSA/Project/Code2",
+      "environment": [],
       "externalConsole": true,
-      "cwd": "c:/Users/SHABBIR TRADERS/Desktop/Code2",
-      "program": "c:/Users/SHABBIR TRADERS/Desktop/Code2/build/Debug/outDebug",
       "MIMode": "gdb",
-      "miDebuggerPath": "gdb",
+      "miDebuggerPath": "C:/msys64/ucrt64/bin/gdb.exe",
       "setupCommands": [
         {
           "description": "Enable pretty-printing for gdb",

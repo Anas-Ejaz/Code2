@@ -3,7 +3,7 @@
 #include <FL/Fl_Button.H>
 
 void onClick(Fl_Widget* w, void*) {
-    w->label("Clicked!");
+    w->label("Clicked hey!");
 }
 
 int main() {
