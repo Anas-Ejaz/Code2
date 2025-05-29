@@ -4,7 +4,7 @@
 
 int main() {
     Fl_Window win(300, 200, "FLTK Window");
-    Fl_Button btn(100, 80, 100, 30, "Click Me");
+    Fl_Button btn(100, 80, 100, 30, "lululu lululu");
     win.end();
     win.show();
     return Fl::run();
