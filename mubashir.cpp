@@ -41,7 +41,7 @@ int main() {
     
     Fl_Box* passLabel = new Fl_Box(50, 90, 100, 30, "Password:");
     passwordInput = new Fl_Input(150, 90, 200, 30);
-    passwordInput->type(FL_SECRET_INPUT); // hide password characters
+    passwordInput->type(FL_SECRET_INPUT); 
 
     
     Fl_Button* loginButton = new Fl_Button(150, 140, 100, 30, "Login");
