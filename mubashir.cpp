@@ -20,7 +20,7 @@ void togglePasswordVisibility(Fl_Widget*, void*) {
     } else {
         passwordInput->type(FL_SECRET_INPUT);
     }
-    Fl::redraw(); // Refresh the UI
+    Fl::redraw(); 
 }
 
 void validateSignUp(Fl_Widget*, void*) {
@@ -54,32 +54,30 @@ void validateSignUp(Fl_Widget*, void*) {
 int main() {
     Fl_Window* window = new Fl_Window(500, 380, "E-Mart Sign Up");
 
-    // Username
+
     Fl_Box* userLabel = new Fl_Box(50, 30, 100, 30, "Username:");
     usernameInput = new Fl_Input(160, 30, 250, 30);
 
-    // Password
     Fl_Box* passLabel = new Fl_Box(50, 80, 100, 30, "Password:");
     passwordInput = new Fl_Input(160, 80, 250, 30);
     passwordInput->type(FL_SECRET_INPUT);
 
-    // Show password checkbox
+
     showPasswordCheck = new Fl_Check_Button(160, 115, 150, 25, "Show Password");
     showPasswordCheck->callback(togglePasswordVisibility);
 
-    // Phone number
     Fl_Box* phoneLabel = new Fl_Box(50, 150, 100, 30, "Phone:");
     phoneInput = new Fl_Input(160, 150, 250, 30);
 
-    // Email
+    
     Fl_Box* emailLabel = new Fl_Box(50, 200, 100, 30, "Email:");
     emailInput = new Fl_Input(160, 200, 250, 30);
 
-    // Sign Up button
+
     Fl_Button* signupButton = new Fl_Button(160, 250, 120, 35, "Sign Up");
     signupButton->callback(validateSignUp);
 
-    // Message box
+    
     messageBox = new Fl_Box(50, 300, 400, 30, "");
 
     window->end();
