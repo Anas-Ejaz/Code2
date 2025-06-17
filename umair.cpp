@@ -4,7 +4,7 @@
 
 int main() {
     Fl_Window window(300, 200, "FLTK Test");
-    Fl_Box box(20, 40, 260, 100, "Hello lul!");
+    Fl_Box box(20, 40, 260, 100, "Hello !");
     window.end();
     window.show();
     return Fl::run();
