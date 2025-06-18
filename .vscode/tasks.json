@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build FLTK App",
+      "type": "shell",
+      "command": "C:/msys64/usr/bin/bash.exe",
+      "args": [
+        "-l",
+        "-c",
+        // "cd '/d/3rd sem/DSA/Project/Code2' && g++ anas.cpp -o anas-app.exe $(fltk-config --cxxflags --ldflags) -mwindows"
+        "cd '/e/3rd Semester/DSA/Pbl/Code2' && g++ umair.cpp -o umair_app.exe $(fltk-config --cxxflags --ldflags) -mwindows"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"]
+    }
+  ]
+}
