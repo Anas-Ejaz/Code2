@@ -9,11 +9,10 @@
 #include <FL/fl_ask.H>
 
 #include <iostream>
-#include <cstring> // for strcmp, strcat, sprintf
+#include <cstring> 
 
 using namespace std;
 
-// UI elements
 Fl_Input *usernameInput, *passwordInput, *phoneInput, *emailInput;
 Fl_Box* messageBox;
 Fl_Check_Button* showPasswordCheck;
@@ -89,7 +88,7 @@ void backToAdmin(Fl_Widget*, void*) {
     adminWindow->show();
 }
 
-// Customer panel
+
 void showCustomerPanel() {
     customerWindow = new Fl_Window(500, 420, "Customer Panel");
 
@@ -119,7 +118,7 @@ void showCustomerPanel() {
     customerWindow->show();
 }
 
-// Admin panel
+
 void showAdminPanel() {
     adminWindow = new Fl_Window(400, 250, "Admin Panel");
 
@@ -160,7 +159,7 @@ void validateSignUp(Fl_Widget*, void*) {
 int main() {
     mainWindow = new Fl_Window(750, 480, "E-Mart Sign Up");
 
-    Fl_PNG_Image* logo = new Fl_PNG_Image("login.png");
+    Fl_PNG_Image* logo = new Fl_PNG_Image("logi.png");
     Fl_Box* logoBox = new Fl_Box(175, 5, 120, 60);
     logoBox->image(logo);
     if (logo->fail()) fl_alert("Image failed to load!");
