@@ -1,188 +1,54 @@
-#include <iostream>
-#include <string>
-#include <windows.h>
-using namespace std;
+#include <FL/Fl.H>
+#include <FL/Fl_Window.H>
+#include <FL/Fl_Input.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Check_Button.H>
+#include <FL/Fl_Multiline_Output.H>
+#include <FL/Fl_PNG_Image.H>
+#include <FL/fl_ask.H>
 
-class Item{
-    public:
-    void itemPanel(){
-        int option;
-        do{
-            system("cls");
-            cout<<"Item"<<endl;
-            cout<<endl;
+class signup {
+public:
+    int signUpPage(){
+        Fl_Window* mainWindow = new Fl_Window(750, 480, "E-Mart Sign Up");
 
-            cout<<"1. Add Items"<<endl;
-            cout<<"2. View Items"<<endl;
-            cout<<"3. Delete Items"<<endl;
-            cout<<"4. Admins Portal"<<endl;
-            cout<<"Enter Option: ";
-            cin>>option;
-            while (cin.fail()) {
-                cin.clear();  
-                while (cin.get() != '\n');
-                    cout<<"Invalid ! Please enter a valid number : ";
-                    cin>>option;
-            }
+        Fl_PNG_Image* logo = new Fl_PNG_Image("login.png");
+        Fl_Box* logoBox = new Fl_Box(175, 5, 120, 60);
+        logoBox->image(logo);
 
-            switch(option){
-                case 1:
-                    addItem();
-                    break;
-                
-                case 2:
-                    viewItem();
-                    break;
+        Fl_Box* userLabel = new Fl_Box(50, 30, 100, 30, "Username:");
+        Fl_Input* usernameInput = new Fl_Input(160, 30, 250, 30);
 
-                case 3:
-                    deleteItem();
-                    break;
-                    
-                case 4:
-                    cout<<"Returning to Admin's portal"<<endl;
-                    Sleep(2000);
-                    // Login login;
-                    break;
+        Fl_Box* passLabel = new Fl_Box(50, 80, 100, 30, "Password:");
+        Fl_Input* passwordInput = new Fl_Input(160, 80, 250, 30);
+        passwordInput->type(FL_SECRET_INPUT);
 
-                default:
-                    cout<<"Invalid option"<<endl;
-                    break;
-            }
-        }while(option != 4);
+        Fl_Check_Button* showPasswordCheck = new Fl_Check_Button(160, 115, 150, 25, "Show Password");
+        
+        Fl_Box* phoneLabel = new Fl_Box(50, 150, 100, 30, "Phone:");
+        Fl_Input* phoneInput = new Fl_Input(160, 150, 250, 30);
+
+        Fl_Box* addressLabel = new Fl_Box(50, 200, 100, 30, "Address:");
+        Fl_Input* addressInput = new Fl_Input(160, 200, 250, 30);
+
+        Fl_Button* signupButton = new Fl_Button(160, 250, 120, 35, "Sign Up");
+        signupButton->callback(validateSignUp);
+        
+        Fl_Box* messageBox = new Fl_Box(50, 300, 400, 30, "");
+        
+        mainWindow->end();
+        mainWindow->show();
+        
+        showPasswordCheck->callback({
+            passwordInput->type(showPasswordCheck->value() ? FL_NORMAL_INPUT : FL_SECRET_INPUT);
+            Fl::redraw();
+        });
+        return Fl::run();
     }
 
-    void addItem(){
-        // Code to add item
-        cout<<"Adding item"<<endl;
+    void togglePasswordVisibility(Fl_Widget*, void*, Fl_Input*, Fl_Check_Button*) {
+        
     }
-    
-    void viewItem(){
-        // Code to view item
-        cout<<"View item"<<endl;
-    }
-    
-    void deleteItem(){
-        // Code to delete item
-        cout<<"Deleting item"<<endl;
-    }
+
 };
-
-class Employees{
-    public:
-    void empPanel(){
-        int option;
-        do{
-            system("cls");
-            cout<<"Employee"<<endl;
-            cout<<endl;
-
-            cout<<"1. Add Employee"<<endl;
-            cout<<"2. View Employee"<<endl;
-            cout<<"3. Remove Employee"<<endl;
-            cout<<"4. Admins Portal"<<endl;
-            cout<<"Enter Option: ";
-            cin>>option;
-            while (cin.fail()) {
-                cin.clear();  
-                while (cin.get() != '\n');
-                    cout<<"Invalid ! Please enter a valid number : ";
-                    cin>>option;
-            }
-
-            switch(option){
-                case 1:
-                    addEmployees();
-                    break;
-                
-                case 2:
-                    viewEmployees();
-                    break;
-                    
-                case 3:
-                    deleteEmployees();
-                    break;
-                    
-                case 4:
-                    cout<<"Returning to Admin's portal"<<endl;
-                    Sleep(2000);
-                    // Login login;
-                    break;
-                    
-                default:
-                    cout<<"Invalid option"<<endl;
-                    break;
-                }
-        }while(option != 4);
-    }
-
-    void addEmployees(){
-        // Code to add item
-        cout<<"Adding Employee"<<endl;
-    }
-    
-    void viewEmployees(){
-        // Code to view item
-        cout<<"Viewing Employee"<<endl;
-    }
-    
-    void deleteEmployees(){
-        // Code to delete item
-        cout<<"Deleting employees"<<endl;
-    }
-};
-
-class Admin{
-    public:
-    void adminPanel(){
-        int option;
-        do{
-            system("cls");
-            cout<<"Admin "<<endl;
-            cout<<endl;
-            
-            cout<<"1. Manage Items"<<endl;
-            cout<<"2. Manage Employees"<<endl;
-            cout<<"3. Transaction"<<endl;
-            cout<<"4. Login Portal"<<endl;
-            cout<<"Enter Option: ";
-            cin>>option;
-            while (cin.fail()) {
-                cin.clear();  
-                while (cin.get() != '\n');
-                    cout<<"Invalid ! Please enter a valid number : ";
-                    cin>>option;
-            }
-
-            switch(option){
-                case 1:
-                    Item i;
-                    i.itemPanel();
-                    break;
-                
-                case 2:
-                    Employees e;
-                    e.empPanel();
-                    break;
-
-                case 3:
-                    // Transaction transaction;
-                    break;
-                    
-                case 4:
-                    cout<<"Returning to login portal"<<endl;
-                    Sleep(2000);
-                    // Login login;
-                    break;
-
-                default:
-                    cout<<"Invalid option"<<endl;
-                    break;
-            }
-        }while(option != 4);
-    }
-};
-
-int main(){
-    Admin a;
-    a.adminPanel();
-}
