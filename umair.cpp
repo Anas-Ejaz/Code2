@@ -31,7 +31,7 @@ using namespace std;
 Fl_Input *firstNameInput, *lastNameInput, *usernameInput, *passwordInput, *confirmPasswordInput, *phoneInput, *emailInput, *addressInput;
 Fl_Box* messageBox;
 Fl_Check_Button* showPasswordCheck;
-Fl_Window *mainWindow, *adminWindow, *customerWindow, *productManageWindow, *signInWindow, *buyProductsWindow, *returnProductWindow;
+Fl_Window *mainWindow, *adminWindow, *customerWindow, *productManageWindow, *adminSignInWindow, *customerSignInWindow, *loginChoiceWindow, *buyProductsWindow, *returnProductWindow; // Added customerSignInWindow and loginChoiceWindow
 Fl_Multiline_Output* productOutput; // For customer cart display in Buy Products Panel
 Fl_Scroll* customerProductScroll; // Global pointer to the scroll area for customer products
 Fl_Group* customerProductScrollContentGroup; // Group to hold dynamic product buttons for scrolling
@@ -69,11 +69,13 @@ void showCustomerPanel();
 void updateCustomerProductDisplay();
 void showBuyProductsPanel();
 void showReturnProductPanel();
-void showSignInPanel();
+void showAdminSignInPanel(); // Renamed from showSignInPanel
+void showCustomerSignInPanel(); // New: for customer specific login
+void showLoginChoicePanel();   // New: for choosing between customer and admin login
 void showAdminPanel();
 void showProductManager(Fl_Widget*, void*);
-void showSignUpPanel(); // Forward declaration for showSignUpPanel
-void validateSignUp(Fl_Widget*, void*); // FORWARD DECLARATION FOR MISSING FUNCTION
+void showSignUpPanel(); 
+void validateSignUp(Fl_Widget*, void*); 
 
 // --- Utility Functions ---
 
@@ -382,7 +384,6 @@ void showBuyProductsPanel() {
             customerProductScrollContentGroup = new Fl_Group(0, 0, customerProductScroll->w() - Fl::scrollbar_size(), customerProductScroll->h());
             customerProductScrollContentGroup->box(FL_NO_BOX);
             customerProductScrollContentGroup->end(); // This closes the group
-            // customerProductScrollContentGroup->resizable(customerProductScrollContentGroup); // REMOVED: This line was redundant/problematic for FLTK's resizable logic
         customerProductScroll->end();
         customerProductScroll->resizable(customerProductScrollContentGroup); // This is the correct resizable for the scroll's content.
 
@@ -456,11 +457,11 @@ void showCustomerPanel() {
             showReturnProductPanel();
         });
 
-        Fl_Button* backBtn = new Fl_Button(120, 180, 160, 35, "Back to Admin");
-        backBtn->color(FL_BLACK); backBtn->labelcolor(FL_WHITE); // Styling
-        backBtn->callback([](Fl_Widget*, void*) {
+        Fl_Button* signOutBtn = new Fl_Button(120, 180, 160, 35, "Sign Out"); 
+        signOutBtn->color(FL_BLACK); signOutBtn->labelcolor(FL_WHITE); // Styling
+        signOutBtn->callback([](Fl_Widget*, void*) {
             if (customerWindow) customerWindow->hide();
-            showAdminPanel();
+            showLoginChoicePanel(); // Go back to the login choice panel on sign out
         });
 
         customerWindow->end();
@@ -474,29 +475,30 @@ void showAdminPanel() {
 
         new Fl_Box(50, 30, 300, 30, "Welcome to the Admin Panel!");
 
-        Fl_Button* customerBtn = new Fl_Button(120, 80, 160, 35, "Customer Panel");
-        customerBtn->color(FL_BLACK); customerBtn->labelcolor(FL_WHITE); // Styling
-        customerBtn->callback([](Fl_Widget*, void*) {
-            if (adminWindow) adminWindow->hide();
-            showCustomerPanel();
-        });
+        // REMOVED: Customer Panel button from Admin Panel
+        // Fl_Button* customerBtn = new Fl_Button(120, 80, 160, 35, "Customer Panel");
+        // customerBtn->color(FL_BLACK); customerBtn->labelcolor(FL_WHITE); // Styling
+        // customerBtn->callback([](Fl_Widget*, void*) {
+        //     if (adminWindow) adminWindow->hide();
+        //     showCustomerPanel(); 
+        // });
 
-        Fl_Button* manageBtn = new Fl_Button(120, 130, 160, 35, "Manage Products");
+        Fl_Button* manageBtn = new Fl_Button(120, 80, 160, 35, "Manage Products"); // Adjusted Y-position
         manageBtn->color(FL_BLACK); manageBtn->labelcolor(FL_WHITE); // Styling
         manageBtn->callback([](Fl_Widget*, void*) {
             if (adminWindow) adminWindow->hide();
             showProductManager(nullptr, nullptr);
         });
 
-        Fl_Button* salesBtn = new Fl_Button(120, 180, 160, 35, "Check Sales");
+        Fl_Button* salesBtn = new Fl_Button(120, 130, 160, 35, "Check Sales"); // Adjusted Y-position
         salesBtn->color(FL_BLACK); salesBtn->labelcolor(FL_WHITE); // Styling
         salesBtn->callback(checkSales);
 
-        Fl_Button* backToSignInBtn = new Fl_Button(120, 230, 160, 35, "Sign Out");
-        backToSignInBtn->color(FL_BLACK); backToSignInBtn->labelcolor(FL_WHITE); // Styling
-        backToSignInBtn->callback([](Fl_Widget*, void*) {
+        Fl_Button* signOutBtn = new Fl_Button(120, 180, 160, 35, "Sign Out"); // Adjusted Y-position
+        signOutBtn->color(FL_BLACK); signOutBtn->labelcolor(FL_WHITE); // Styling
+        signOutBtn->callback([](Fl_Widget*, void*) {
             if (adminWindow) adminWindow->hide();
-            showSignInPanel();
+            showLoginChoicePanel(); // Go back to the login choice panel on sign out
         });
 
         adminWindow->end();
@@ -504,21 +506,106 @@ void showAdminPanel() {
     adminWindow->show();
 }
 
-void validateSignIn(Fl_Widget*, void*) {
-    Fl_Input* user = static_cast<Fl_Input*>(signInWindow->child(0));
-    Fl_Input* pass = static_cast<Fl_Input*>(signInWindow->child(1));
+// --- NEW PANEL: Login Choice ---
+void showLoginChoicePanel() {
+    if (loginChoiceWindow == nullptr) {
+        loginChoiceWindow = new Fl_Window(350, 200, "Login Choice");
+        loginChoiceWindow->color(FL_DARK_CYAN); // Add some styling
 
-    if (strcmp("admin", user->value()) == 0 && strcmp("admin123", pass->value()) == 0) {
-        if (signInWindow) signInWindow->hide();
-        showAdminPanel();
-    } else {
-        fl_alert("Invalid username or password!");
+        new Fl_Box(50, 30, 250, 30, "Please choose your login type:");
+
+        Fl_Button* customerLoginBtn = new Fl_Button(100, 80, 150, 35, "Customer Login");
+        customerLoginBtn->color(FL_DARK_BLUE); customerLoginBtn->labelcolor(FL_WHITE);
+        customerLoginBtn->callback([](Fl_Widget*, void*) {
+            if (loginChoiceWindow) loginChoiceWindow->hide();
+            showCustomerSignInPanel(); // Go to the dedicated customer sign-in
+        });
+
+        Fl_Button* adminLoginBtn = new Fl_Button(100, 130, 150, 35, "Admin Login");
+        adminLoginBtn->color(FL_DARK_RED); adminLoginBtn->labelcolor(FL_WHITE);
+        adminLoginBtn->callback([](Fl_Widget*, void*) {
+            if (loginChoiceWindow) loginChoiceWindow->hide();
+            showAdminSignInPanel(); // Go to the admin sign-in panel
+        });
+
+        loginChoiceWindow->end();
     }
+    loginChoiceWindow->show();
 }
 
-void showSignInPanel() {
-    if (signInWindow == nullptr) {
-        signInWindow = new Fl_Window(300, 250, "Sign In"); // Increased height to accommodate new button
+
+// --- NEW PANEL: Customer Sign In ---
+void validateCustomerSignIn(Fl_Widget* w, void* data) {
+    // Assuming the first child is username and second is password for customerSignInWindow
+    Fl_Input* user = static_cast<Fl_Input*>(customerSignInWindow->child(0));
+    Fl_Input* pass = static_cast<Fl_Input*>(customerSignInWindow->child(1));
+
+    // For demonstration, any non-empty username/password is "valid" for customer
+    // In a real app, you'd check against stored user data.
+    if (strlen(user->value()) > 0 && strlen(pass->value()) > 0) {
+        if (customerSignInWindow) customerSignInWindow->hide();
+        showCustomerPanel();
+    } else {
+        fl_alert("Please enter both username and password.");
+    }
+    user->value(""); // Clear fields after attempt
+    pass->value("");
+}
+
+void showCustomerSignInPanel() {
+    if (customerSignInWindow == nullptr) {
+        customerSignInWindow = new Fl_Window(300, 250, "Customer Sign In");
+
+        Fl_Input* user = new Fl_Input(100, 30, 150, 30, "Username:");
+        Fl_Input* pass = new Fl_Input(100, 70, 150, 30, "Password:");
+        pass->type(FL_SECRET_INPUT);
+
+        Fl_Button* loginBtn = new Fl_Button(100, 120, 100, 30, "Login");
+        loginBtn->color(FL_BLACK); loginBtn->labelcolor(FL_WHITE);
+        loginBtn->callback(validateCustomerSignIn);
+
+        Fl_Button* backBtn = new Fl_Button(80, 170, 140, 30, "Back to Choice");
+        backBtn->color(FL_BLACK); backBtn->labelcolor(FL_WHITE);
+        backBtn->callback([](Fl_Widget*, void*) {
+            if (customerSignInWindow) customerSignInWindow->hide();
+            showLoginChoicePanel();
+        });
+
+        customerSignInWindow->end();
+    }
+    // Clear fields every time the sign-in panel is shown
+    Fl_Input* usernameField = static_cast<Fl_Input*>(customerSignInWindow->child(0));
+    if (usernameField) {
+        usernameField->value("");
+    }
+
+    Fl_Input* passwordField = static_cast<Fl_Input*>(customerSignInWindow->child(1));
+    if (passwordField) {
+        passwordField->value("");
+    }
+    customerSignInWindow->show();
+}
+
+
+// --- Admin Sign In (Previously showSignInPanel) ---
+void validateAdminSignIn(Fl_Widget* w, void*) { // Renamed callback
+    // Assuming the first child is username and second is password for adminSignInWindow
+    Fl_Input* user = static_cast<Fl_Input*>(adminSignInWindow->child(0));
+    Fl_Input* pass = static_cast<Fl_Input*>(adminSignInWindow->child(1));
+
+    if (strcmp("admin", user->value()) == 0 && strcmp("admin123", pass->value()) == 0) {
+        if (adminSignInWindow) adminSignInWindow->hide();
+        showAdminPanel();
+    } else {
+        fl_alert("Invalid admin username or password!");
+    }
+    user->value(""); // Clear fields after attempt
+    pass->value("");
+}
+
+void showAdminSignInPanel() { // Renamed from showSignInPanel
+    if (adminSignInWindow == nullptr) {
+        adminSignInWindow = new Fl_Window(300, 250, "Admin Sign In"); // Increased height to accommodate new button
 
         Fl_Input* user = new Fl_Input(100, 30, 150, 30, "Username:");
         Fl_Input* pass = new Fl_Input(100, 70, 150, 30, "Password:");
@@ -526,29 +613,29 @@ void showSignInPanel() {
 
         Fl_Button* loginBtn = new Fl_Button(100, 120, 100, 30, "Login");
         loginBtn->color(FL_BLACK); loginBtn->labelcolor(FL_WHITE); // Styling
-        loginBtn->callback(validateSignIn);
+        loginBtn->callback(validateAdminSignIn); // Changed callback
 
-        // New "Back to Sign Up" button
-        Fl_Button* backToSignUpBtn = new Fl_Button(80, 170, 140, 30, "Back to Sign Up");
-        backToSignUpBtn->color(FL_BLACK); backToSignUpBtn->labelcolor(FL_WHITE); // Styling
-        backToSignUpBtn->callback([](Fl_Widget*, void*) {
-            if (signInWindow) signInWindow->hide();
-            showSignUpPanel(); // Go back to the initial sign-up window
+        // New "Back to Login Choice" button
+        Fl_Button* backToChoiceBtn = new Fl_Button(80, 170, 140, 30, "Back to Choice");
+        backToChoiceBtn->color(FL_BLACK); backToChoiceBtn->labelcolor(FL_WHITE); // Styling
+        backToChoiceBtn->callback([](Fl_Widget*, void*) {
+            if (adminSignInWindow) adminSignInWindow->hide();
+            showLoginChoicePanel(); // Go back to the initial sign-up window
         });
 
-        signInWindow->end();
+        adminSignInWindow->end();
     }
-    Fl_Input* usernameField = static_cast<Fl_Input*>(signInWindow->child(0));
+    Fl_Input* usernameField = static_cast<Fl_Input*>(adminSignInWindow->child(0));
     if (usernameField) {
         usernameField->value("");
     }
 
-    Fl_Input* passwordField = static_cast<Fl_Input*>(signInWindow->child(1));
+    Fl_Input* passwordField = static_cast<Fl_Input*>(adminSignInWindow->child(1));
     if (passwordField) {
         passwordField->value("");
     }
 
-    signInWindow->show();
+    adminSignInWindow->show();
 }
 
 // DEFINITION FOR THE MISSING VALIDATE SIGN UP FUNCTION
@@ -589,10 +676,10 @@ void validateSignUp(Fl_Widget*, void*) {
 
     // If validation passes
     messageBox->labelcolor(FL_DARK_GREEN);
-    messageBox->label("Sign Up Successful! You can now sign in.");
+    messageBox->label("Sign Up Successful! You can now choose to sign in.");
 
     // In a real application, you would save this user data (e.g., to a file or database)
-    // For now, we'll just clear the fields and switch to the sign-in panel after a delay.
+    // For now, we'll just clear the fields and switch to the sign-in choice panel after a delay.
     firstNameInput->value("");
     lastNameInput->value("");
     usernameInput->value("");
@@ -604,10 +691,10 @@ void validateSignUp(Fl_Widget*, void*) {
     showPasswordCheck->value(0); // Uncheck "Show Password"
     togglePasswordVisibility(nullptr, nullptr); // Reset password fields type
 
-    // After successful sign-up, switch to the sign-in panel after a short delay
+    // After successful sign-up, switch to the sign-in choice panel after a short delay
     Fl::add_timeout(1.5, [](void*){
         if (mainWindow) mainWindow->hide();
-        showSignInPanel();
+        showLoginChoicePanel(); // Go to the new login choice panel
     }, nullptr);
 }
 
@@ -617,7 +704,10 @@ void showSignUpPanel() {
     if (mainWindow == nullptr) { // Only create if it doesn't exist
         mainWindow = new Fl_Window(750, 550, "E-Mart Sign Up");
 
-        Fl_PNG_Image* logo = new Fl_PNG_Image("logi.png");
+        // The image files appear to be named 'image_XXXXXX.png' based on your provided context.
+        // Assuming 'logi.png' is intended to be one of these or a different logo.
+        // If not, replace "logi.png" with the correct image file name.
+        Fl_PNG_Image* logo = new Fl_PNG_Image("logi.png"); 
         Fl_Box* logoBox = new Fl_Box(175, 5, 120, 60);
         logoBox->image(logo);
         if (logo->fail()) fl_alert("Image 'logi.png' failed to load! Make sure it's in the same directory as the executable.");
@@ -653,7 +743,7 @@ void showSignUpPanel() {
 
         Fl_Button* signupButton = new Fl_Button(160, 400, 120, 35, "Sign Up");
         signupButton->color(FL_BLACK); signupButton->labelcolor(FL_WHITE); // Styling
-        signupButton->callback(validateSignUp); // Now this callback has a defined function
+        signupButton->callback(validateSignUp); 
 
         messageBox = new Fl_Box(50, 450, 400, 30, "");
         messageBox->labelcolor(FL_RED);
@@ -691,7 +781,9 @@ int main() {
     allProducts.push_back({"Watermelon", 100});
     allProducts.push_back({"Cucumbers", 45});
     allProducts.push_back({"Spinach", 55});
-    // Initial call to show the sign-up panel when the application starts
+
+
+    // Start by showing the sign-up panel
     showSignUpPanel();
     return Fl::run();
 }
