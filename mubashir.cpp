@@ -18,7 +18,7 @@
 // For case-insensitive string comparison (Windows specific, or use custom for portable)
 #ifdef _WIN32
 #include <strings.h> // For strcasecmp on some compilers, or use _stricmp
-#define strcasecmp _stricmp // Map to _stricmp for MSVC/MinGW
+#define strcasecmp _stricmp /
 #else
 #include <strings.h> // For strcasecmp on Linux/macOS
 #endif
