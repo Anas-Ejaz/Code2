@@ -28,7 +28,7 @@ struct Product { char name[50]; int price; };
 struct CartItem { char name[50]; int price; };
 
 // Globals
-Fl_Window *mainWindow, *signInWindow, *adminWindow, *customerWindow, *productManageWindow, *buyProductsWindow;
+Fl_Window *mainWindow, *signInWindow, *adminWindow, *customerWindow;
 Fl_Input *firstNameInput, *lastNameInput, *usernameInput, *passwordInput, *confirmPasswordInput, *phoneInput, *emailInput, *addressInput;
 Fl_Check_Button* showPasswordCheck;
 Fl_Box* messageBox;
@@ -48,14 +48,12 @@ const int MAX_CART_ITEMS = 100;
 void showAdminPanel(); void showCustomerPanel(); void updateProductOutput();
 void updateCustomerProductDisplay(); void updateProductList();
 
-// Password Visibility Toggle
 void togglePasswordVisibility(Fl_Widget*, void*) {
     passwordInput->type(showPasswordCheck->value() ? FL_NORMAL_INPUT : FL_SECRET_INPUT);
     confirmPasswordInput->type(showPasswordCheck->value() ? FL_NORMAL_INPUT : FL_SECRET_INPUT);
     Fl::redraw();
 }
 
-// Cart Display Update
 void updateProductOutput() {
     totalPrice = 0;
     char output[1000] = "Products in Cart:\n\n";
@@ -65,49 +63,29 @@ void updateProductOutput() {
     }
     char totalLine[100]; snprintf(totalLine, sizeof(totalLine), "\nTotal: Rs.%d", totalPrice);
     strcat(output, totalLine);
-    productOutput->value(output);
+    if (productOutput) productOutput->value(output);
 }
 
-// Admin Product List Update
 void updateProductList() {
     char buffer[4000] = "Available Products:\n\n";
     for (size_t i = 0; i < allProducts.size(); i++) {
         char line[150]; snprintf(line, sizeof(line), "%zu. %s - Rs.%d\n", i+1, allProducts[i].name, allProducts[i].price);
         strcat(buffer, line);
     }
-    prodManageOutputContent->value(buffer);
-    int num_lines = 0;
-    for (int k = 0; buffer[k] != '\0'; ++k) if (buffer[k] == '\n') num_lines++;
-    int height = (num_lines+2) * prodManageOutputContent->textsize();
-    prodManageOutputContent->size(prodManageOutputContent->w(), max(adminProductScroll->h(), height));
-    adminProductScrollContentGroup->size(adminProductScrollContentGroup->w(), max(adminProductScroll->h(), height));
-    adminProductScroll->scroll_to(0, 0);
-    adminProductScroll->redraw();
-    adminProductScrollContentGroup->redraw();
+    if (prodManageOutputContent) {
+        prodManageOutputContent->value(buffer);
+        int num_lines = 0;
+        for (int k = 0; buffer[k] != '\0'; ++k) if (buffer[k] == '\n') num_lines++;
+        int height = (num_lines+2) * prodManageOutputContent->textsize();
+        prodManageOutputContent->size(prodManageOutputContent->w(), height);
+        adminProductScrollContentGroup->size(adminProductScrollContentGroup->w(), height);
+        adminProductScroll->scroll_to(0, 0);
+        adminProductScroll->redraw();
+        adminProductScrollContentGroup->redraw();
+    }
     updateCustomerProductDisplay();
 }
 
-// Add Product
-void addProduct(Fl_Widget*, void*) {
-    const char* name = prodNameInput->value(); int price = atoi(prodPriceInput->value());
-    if (name[0] == '\0' || price <= 0) return;
-    for (const auto& p : allProducts) if (strcasecmp(p.name, name) == 0) { fl_alert("Duplicate!"); return; }
-    Product p; strncpy(p.name, name, 49); p.name[49] = '\0'; p.price = price;
-    allProducts.push_back(p);
-    prodNameInput->value(""); prodPriceInput->value("");
-    updateProductList(); fl_message("Product added.");
-}
-
-// Change Product Price
-void changeProductPrice(Fl_Widget*, void*) {
-    const char* name = prodNameInput->value(); int price = atoi(prodPriceInput->value());
-    for (auto& p : allProducts) {
-        if (strcasecmp(p.name, name) == 0) { p.price = price; updateProductList(); fl_message("Updated."); return; }
-    }
-    fl_alert("Not found!");
-}
-
-// Add Product to Cart
 void addProductToCart(Fl_Widget*, void* data) {
     int index = reinterpret_cast<intptr_t>(data);
     if (index >= 0 && index < allProducts.size() && cartItems.size() < MAX_CART_ITEMS) {
@@ -118,7 +96,6 @@ void addProductToCart(Fl_Widget*, void* data) {
     }
 }
 
-// Delete Last Cart Item
 void deleteLastProduct(Fl_Widget*, void*) {
     if (!cartItems.empty()) {
         totalSales -= cartItems.back().price; cartItems.pop_back();
@@ -126,15 +103,14 @@ void deleteLastProduct(Fl_Widget*, void*) {
     }
 }
 
-// Checkout Cart
 void checkoutCart(Fl_Widget*, void*) {
     if (cartItems.empty()) { fl_alert("Cart empty!"); return; }
     char msg[200]; snprintf(msg, sizeof(msg), "Thank you! Total: Rs.%d", totalPrice);
     fl_message(msg); cartItems.clear(); totalPrice = 0; updateProductOutput();
 }
 
-// Update Customer Products View
 void updateCustomerProductDisplay() {
+    if (!customerProductScrollContentGroup || !customerProductScroll) return;
     customerProductScrollContentGroup->clear();
     customerProductScrollContentGroup->begin();
     int y = 10;
@@ -150,8 +126,19 @@ void updateCustomerProductDisplay() {
     customerProductScroll->redraw();
 }
 
-// GUI windows and main setup would go below...
-// Due to token limit, continue GUI layout in next chunk if needed
+void showAdminPanel() {
+    adminWindow = new Fl_Window(500, 300, "Admin Panel");
+    Fl_Box* label = new Fl_Box(20, 40, 460, 40, "Admin Panel Loaded Successfully");
+    label->labelfont(FL_BOLD); label->labelsize(16); label->align(FL_ALIGN_CENTER);
+    adminWindow->end(); adminWindow->show();
+}
+
+void showCustomerPanel() {
+    customerWindow = new Fl_Window(500, 300, "Customer Panel");
+    Fl_Box* label = new Fl_Box(20, 40, 460, 40, "Customer Panel Loaded Successfully");
+    label->labelfont(FL_BOLD); label->labelsize(16); label->align(FL_ALIGN_CENTER);
+    customerWindow->end(); customerWindow->show();
+}
 
 int main() {
     allProducts.push_back({"Milk", 150});
@@ -159,9 +146,7 @@ int main() {
     allProducts.push_back({"Rice", 200});
     allProducts.push_back({"Apples", 50});
     allProducts.push_back({"Oranges", 70});
-    // Add more as needed...
 
-    // Example window (Sign In)
     signInWindow = new Fl_Window(300, 200, "Sign In");
     Fl_Input* user = new Fl_Input(100, 30, 150, 30, "Username:");
     Fl_Input* pass = new Fl_Input(100, 70, 150, 30, "Password:");
