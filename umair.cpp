@@ -12,18 +12,17 @@
 #include <iostream>
 #include <cstring>
 #include <vector>
-#include <algorithm> // For std::max, std::find_if
-#include <cstdio>    // For snprintf
-#include <string>    // For std::string to manage labels dynamically
-#include <sstream>   // For std::stringstream
-#include <iomanip>   // For std::setw, std::left
+#include <algorithm>
+#include <cstdio>
+#include <string>
+#include <sstream>
+#include <iomanip>
 
-// For case-insensitive string comparison (Windows specific, or use custom for portable)
 #ifdef _WIN32
-#include <strings.h> // For strcasecmp on some compilers, or use _stricmp
-#define strcasecmp _stricmp // Map to _stricmp for MSVC/MinGW
+#include <strings.h>
+#define strcasecmp _stricmp
 #else
-#include <strings.h> // For strcasecmp on Linux/macOS
+#include <strings.h>
 #endif
 
 using namespace std;
@@ -34,33 +33,30 @@ Fl_Box* messageBox;
 Fl_Check_Button* showPasswordCheck;
 Fl_Window *mainWindow, *adminWindow, *customerWindow, *adminSignInWindow, *customerSignInWindow, *loginChoiceWindow, *buyProductsWindow, *returnProductWindow;
 
-// New Admin Product Management Windows/Inputs
+// Admin Product Management Windows/Inputs
 Fl_Window *adminProductManagementWindow, *adminAddProductWindow, *adminUpdateProductWindow, *adminDeleteProductWindow, *adminDisplayProductsWindow;
 Fl_Input *addProdNameInput, *addProdIdInput, *addProdPriceInput, *addProdQuantityInput;
 Fl_Input *updateProdIdInput, *updateNewProdNameInput, *updateNewProdPriceInput, *updateNewProdQuantityInput;
 Fl_Input *deleteProdIdInput;
-Fl_Multiline_Output* adminDisplayProductsOutput; // To display product list
+Fl_Multiline_Output* adminDisplayProductsOutput;
+Fl_Scroll* adminProductScroll;
+Fl_Group* adminProductScrollContentGroup;
 
-// New Customer Management Windows/Inputs
+// Customer Management Windows/Inputs
 Fl_Window *customerManagementWindow, *customerAddCustomerWindow, *customerUpdateCustomerWindow, *customerDeleteCustomerWindow, *customerDisplayCustomersWindow;
 Fl_Input *addCustFirstNameInput, *addCustLastNameInput, *addCustUsernameInput, *addCustPasswordInput, *addCustPhoneInput, *addCustEmailInput, *addCustAddressInput, *addCustIdInput;
 Fl_Input *updateCustIdInput, *updateNewCustFirstNameInput, *updateNewCustLastNameInput, *updateNewCustUsernameInput, *updateNewCustPasswordInput, *updateNewCustPhoneInput, *updateNewCustEmailInput, *updateNewCustAddressInput;
 Fl_Input *deleteCustIdInput;
-Fl_Multiline_Output* customerDisplayCustomersOutput; // To display customer list
+Fl_Multiline_Output* customerDisplayCustomersOutput;
 
 // Existing product and cart related UI
-Fl_Multiline_Output* productOutput; // For customer cart display in Buy Products Panel
-Fl_Scroll* customerProductScroll; // Global pointer to the scroll area for customer products
-Fl_Group* customerProductScrollContentGroup; // Group to hold dynamic product buttons for scrolling
-
-// Admin Product Management UI specific to display and scroll (re-used for adminDisplayProductsOutput)
-Fl_Scroll* adminProductScroll; // Scroll area for admin product list (in adminDisplayProductsPanel)
-Fl_Group* adminProductScrollContentGroup; // Group to hold multiline output for scrolling (in adminDisplayProductsPanel)
+Fl_Multiline_Output* productOutput;
+Fl_Scroll* customerProductScroll;
+Fl_Group* customerProductScrollContentGroup;
 
 // Return Product UI
 Fl_Input* returnProductNameInput;
 Fl_Box* returnMessageBox;
-
 
 // --- Data Structures ---
 struct Product {
@@ -69,7 +65,7 @@ struct Product {
     int price;
     int quantity;
 };
-vector<Product> allProducts; // Stores all available products
+vector<Product> allProducts;
 
 struct Customer {
     string id;
@@ -81,19 +77,18 @@ struct Customer {
     string email;
     string address;
 };
-vector<Customer> allCustomers; // Stores all registered customers
+vector<Customer> allCustomers;
 
 struct CartItem {
     string name;
     int price;
 };
-vector<CartItem> cartItems; // Using vector for cart items for easier management
+vector<CartItem> cartItems;
 
 int totalPrice = 0;
-int totalSales = 0; // Cumulative sales across all customer sessions
+int totalSales = 0;
 
-
-// --- Forward Declarations of all major panel display functions. ---
+// --- Forward Declarations ---
 void showCustomerPanel();
 void updateCustomerProductDisplay();
 void showBuyProductsPanel();
@@ -102,8 +97,7 @@ void showAdminSignInPanel();
 void showCustomerSignInPanel();
 void showLoginChoicePanel();
 void showAdminPanel();
-// showProductManager removed as it's no longer used
-void showSignUpPanel(); 
+void showSignUpPanel();
 void validateSignUp(Fl_Widget*, void*);
 
 // Admin Product Management Declarations
@@ -114,7 +108,7 @@ void showAdminDisplayProductsPanel();
 void showAdminDeleteProductPanel();
 string generateUniqueProductId();
 Product* findProductById(const string& id);
-void updateAdminDisplayProductsOutput(); // Added declaration
+void updateAdminDisplayProductsOutput();
 
 // Customer Management Declarations
 void showCustomerManagementPanel();
@@ -124,68 +118,57 @@ void showCustomerDisplayCustomersPanel();
 void showCustomerDeleteCustomerPanel();
 string generateUniqueCustomerId();
 Customer* findCustomerById(const string& id);
-void updateCustomerDisplayOutput(); // Added declaration
-
+void updateCustomerDisplayOutput();
 
 // --- Utility Functions ---
 
-// Callback to toggle password visibility for sign-up fields
 void togglePasswordVisibility(Fl_Widget*, void*) {
     passwordInput->type(showPasswordCheck->value() ? FL_NORMAL_INPUT : FL_SECRET_INPUT);
     confirmPasswordInput->type(showPasswordCheck->value() ? FL_NORMAL_INPUT : FL_SECRET_INPUT);
-    Fl::redraw(); // Redraw to apply the type change immediately
+    Fl::redraw();
 }
 
-// Updates the display of products in the customer's cart and the total price.
 void updateProductOutput() {
     totalPrice = 0;
-    string output_str = "Products in Cart:\n\n"; // Use std::string for easier concatenation
-
+    string output_str = "Products in Cart:\n\n";
     for (const auto& item : cartItems) {
         char line[100];
-        // Use snprintf for safer buffer handling
         snprintf(line, sizeof(line), "%s - Rs.%d\n", item.name.c_str(), item.price);
         output_str += line;
         totalPrice += item.price;
     }
-
     char totalLine[100];
     snprintf(totalLine, sizeof(totalLine), "\nTotal: Rs.%d", totalPrice);
     output_str += totalLine;
-
     productOutput->value(output_str.c_str());
 }
 
-// Helper to generate a unique product ID (simple incremental)
 string generateUniqueProductId() {
-    static int nextId = 101; // Starting ID for products
+    static int nextId = 101;
     return "P" + to_string(nextId++);
 }
 
-// Helper to generate a unique customer ID (simple incremental)
 string generateUniqueCustomerId() {
-    static int nextId = 1; // Starting ID for customers
+    static int nextId = 1;
     return "C" + to_string(nextId++);
 }
 
-// Helper function to find a product by ID
 Product* findProductById(const string& id) {
     for (auto& prod : allProducts) {
         if (prod.id == id) {
             return &prod;
         }
     }
-    return nullptr; // Not found
+    return nullptr;
 }
 
-// Helper function to find a customer by ID
 Customer* findCustomerById(const string& id) {
     for (auto& cust : allCustomers) {
         if (cust.id == id) {
             return &cust;
         }
     }
-    return nullptr; // Not found
+    return nullptr;
 }
 
 // --- Admin Product Management Callbacks ---
@@ -206,7 +189,6 @@ void adminAddProduct(Fl_Widget*, void*) {
         return;
     }
 
-    // Check for duplicate product names (case-insensitive)
     for (const auto& prod : allProducts) {
         if (strcasecmp(prod.name.c_str(), name.c_str()) == 0) {
             fl_alert("Product with this name already exists. Consider changing its price instead.");
@@ -217,7 +199,7 @@ void adminAddProduct(Fl_Widget*, void*) {
     allProducts.push_back({id, name, price, quantity});
     fl_message("Product added: ID=%s, Name=%s, Price=%d, Quantity=%d", id.c_str(), name.c_str(), price, quantity);
 
-    addProdIdInput->value(generateUniqueProductId().c_str()); // Auto-generate next ID
+    addProdIdInput->value(generateUniqueProductId().c_str());
     addProdNameInput->value("");
     addProdPriceInput->value("");
     addProdQuantityInput->value("");
@@ -262,13 +244,12 @@ void adminDeleteProduct(Fl_Widget*, void*) {
     deleteProdIdInput->value("");
 }
 
-// Function to update the display of products in the Admin Display Products panel
 void updateAdminDisplayProductsOutput() {
     if (!adminDisplayProductsOutput || !adminProductScroll || !adminProductScrollContentGroup) return;
 
     stringstream ss;
     ss << left << setw(10) << "ID" << setw(30) << "Name" << setw(10) << "Price" << setw(10) << "Qty" << "\n";
-    ss << string(60, '-') << "\n"; // Separator
+    ss << string(60, '-') << "\n";
 
     for (const auto& prod : allProducts) {
         ss << left << setw(10) << prod.id
@@ -278,24 +259,16 @@ void updateAdminDisplayProductsOutput() {
     }
     adminDisplayProductsOutput->value(ss.str().c_str());
 
-    // Calculate height based on actual number of lines and text size
     int num_lines = count(ss.str().begin(), ss.str().end(), '\n');
-    // Ensure sufficient height for content + some padding
-    int required_text_height = max(adminDisplayProductsOutput->textsize() * 5, (num_lines + 2) * adminDisplayProductsOutput->textsize()); 
-
-    // Update the height of the multiline output
+    int required_text_height = max(adminDisplayProductsOutput->textsize() * 5, (num_lines + 2) * adminDisplayProductsOutput->textsize());
     adminDisplayProductsOutput->size(adminProductScrollContentGroup->w(), required_text_height);
-    
-    // Update the height of the content group to contain the multiline output
-    // Ensure it's at least the scroll area's height to prevent scrollbar flickering for small content
     int required_group_height = max(adminProductScroll->h(), required_text_height);
     adminProductScrollContentGroup->size(adminProductScrollContentGroup->w(), required_group_height);
 
     adminProductScrollContentGroup->redraw();
     adminProductScroll->redraw();
-    adminProductScroll->scroll_to(0,0); // Reset scroll position to top
+    adminProductScroll->scroll_to(0, 0);
 }
-
 
 // --- Customer Management Callbacks ---
 
@@ -319,8 +292,7 @@ void customerAddCustomer(Fl_Widget*, void*) {
         fl_alert("Customer with this ID already exists.");
         return;
     }
-    
-    // Simple check for unique username (case-sensitive for simplicity here)
+
     for (const auto& cust : allCustomers) {
         if (cust.username == uname) {
             fl_alert("Username already exists. Please choose another.");
@@ -358,11 +330,9 @@ void customerUpdateCustomer(Fl_Widget*, void*) {
     const string newEmail = updateNewCustEmailInput->value();
     const string newAddress = updateNewCustAddressInput->value();
 
-    // Update only if new value is provided (not empty)
     if (!newFName.empty()) cust->firstName = newFName;
     if (!newLName.empty()) cust->lastName = newLName;
     if (!newUname.empty()) {
-        // Check for username conflict if changing
         bool usernameExists = false;
         for (const auto& existingCust : allCustomers) {
             if (existingCust.id != id && existingCust.username == newUname) {
@@ -408,13 +378,12 @@ void customerDeleteCustomer(Fl_Widget*, void*) {
     deleteCustIdInput->value("");
 }
 
-// Function to update the display of customers in the Customer Display Customers panel
 void updateCustomerDisplayOutput() {
     if (!customerDisplayCustomersOutput) return;
 
     stringstream ss;
     ss << left << setw(10) << "ID" << setw(20) << "Username" << setw(20) << "Name" << setw(15) << "Phone" << "\n";
-    ss << string(65, '-') << "\n"; // Separator
+    ss << string(65, '-') << "\n";
 
     for (const auto& cust : allCustomers) {
         ss << left << setw(10) << cust.id
@@ -424,22 +393,17 @@ void updateCustomerDisplayOutput() {
     }
     customerDisplayCustomersOutput->value(ss.str().c_str());
 
-    // Adjust height based on content.
     int num_lines = count(ss.str().begin(), ss.str().end(), '\n');
     int text_height = max(customerDisplayCustomersOutput->textsize() * 5, (num_lines + 3) * customerDisplayCustomersOutput->textsize());
-    
-    // Set the height of the output widget.
     customerDisplayCustomersOutput->size(customerDisplayCustomersOutput->w(), text_height);
     customerDisplayCustomersOutput->redraw();
-
-    // Redraw the parent window directly to ensure updates are visible.
     if (customerDisplayCustomersWindow) {
         customerDisplayCustomersWindow->redraw();
     }
 }
 
+// --- Admin Panel Callbacks ---
 
-// --- Existing Admin Panel Callbacks (Adjusted for new flow) ---
 void checkSales(Fl_Widget*, void*) {
     char msg[100];
     snprintf(msg, sizeof(msg), "Total Sales: Rs.%d", totalSales);
@@ -466,15 +430,15 @@ void addProductToCart(Fl_Widget* w, void* data) {
     int productIndex = reinterpret_cast<intptr_t>(data);
 
     if (productIndex >= 0 && productIndex < allProducts.size()) {
-        if (allProducts[productIndex].quantity > 0) { // Check stock
+        if (allProducts[productIndex].quantity > 0) {
             CartItem newItem;
-            newItem.name = allProducts[productIndex].name; // Use std::string
+            newItem.name = allProducts[productIndex].name;
             newItem.price = allProducts[productIndex].price;
             cartItems.push_back(newItem);
-            allProducts[productIndex].quantity--; // Decrease stock
-            totalSales += allProducts[productIndex].price; // Accumulate sales
-            updateProductOutput(); // Refresh cart display
-            updateCustomerProductDisplay(); // Refresh product list to show updated quantity
+            allProducts[productIndex].quantity--;
+            totalSales += allProducts[productIndex].price;
+            updateProductOutput();
+            updateCustomerProductDisplay();
             fl_message("Product added to cart!");
         } else {
             fl_alert("Product is out of stock!");
@@ -484,7 +448,6 @@ void addProductToCart(Fl_Widget* w, void* data) {
 
 void deleteLastProduct(Fl_Widget*, void*) {
     if (!cartItems.empty()) {
-        // Find the product in allProducts to increment its quantity back
         const string& removedItemName = cartItems.back().name;
         bool foundInProducts = false;
         for (auto& prod : allProducts) {
@@ -495,11 +458,11 @@ void deleteLastProduct(Fl_Widget*, void*) {
             }
         }
 
-        totalSales -= cartItems.back().price; // Deduct from total sales
-        cartItems.pop_back(); // Remove the last item
-        updateProductOutput(); // Refresh cart display
+        totalSales -= cartItems.back().price;
+        cartItems.pop_back();
+        updateProductOutput();
         if (foundInProducts) {
-            updateCustomerProductDisplay(); // Refresh product list to show updated quantity
+            updateCustomerProductDisplay();
         }
         fl_message("Last item removed from cart!");
     } else {
@@ -516,23 +479,20 @@ void processReturnProduct(Fl_Widget*, void*) {
     }
 
     bool found = false;
-    // Iterate through the cart to find and remove the product (first instance found)
     for (size_t i = 0; i < cartItems.size(); ++i) {
         if (strcasecmp(cartItems[i].name.c_str(), productName.c_str()) == 0) {
-            totalSales -= cartItems[i].price; // Deduct from total sales
-
-            // Find the product in allProducts to increment its quantity back
+            totalSales -= cartItems[i].price;
             for (auto& prod : allProducts) {
                 if (prod.name == cartItems[i].name) {
                     prod.quantity++;
                     break;
                 }
             }
-            cartItems.erase(cartItems.begin() + i); // Remove the item
+            cartItems.erase(cartItems.begin() + i);
             found = true;
             returnMessageBox->labelcolor(FL_DARK_GREEN);
             returnMessageBox->label("Product returned successfully!");
-            break; // Stop after returning one instance
+            break;
         }
     }
 
@@ -540,24 +500,21 @@ void processReturnProduct(Fl_Widget*, void*) {
         returnMessageBox->labelcolor(FL_RED);
         returnMessageBox->label("Product not found in cart!");
     }
-    returnProductNameInput->value(""); // Clear input field
-    updateProductOutput(); // Refresh cart display (important for consistency)
-    updateCustomerProductDisplay(); // Refresh customer product list (stock update)
-    returnProductWindow->redraw(); // Redraw the return window to show message updates
+    returnProductNameInput->value("");
+    updateProductOutput();
+    updateCustomerProductDisplay();
+    returnProductWindow->redraw();
 }
-
 
 // --- Panel Display Functions ---
 
 void showAdminPanel() {
     if (adminWindow == nullptr) {
         adminWindow = new Fl_Window(400, 300, "Admin Panel");
-        adminWindow->color(FL_DARK_BLUE); // Changed from FL_LIGHT_GREEN to FL_DARK_BLUE (Line 555)
+        adminWindow->color(FL_BLACK);
 
-        // FIX START: Storing the Fl_Box pointer and then applying labelcolor
         Fl_Box* welcomeBox = new Fl_Box(50, 30, 300, 30, "Welcome to the Admin Panel!");
-        welcomeBox->labelcolor(FL_WHITE); // Set label color for contrast
-        // FIX END
+        welcomeBox->labelcolor(FL_WHITE);
 
         Fl_Button* manageProductsBtn = new Fl_Button(120, 80, 160, 35, "Manage Products");
         manageProductsBtn->color(FL_BLACK); manageProductsBtn->labelcolor(FL_WHITE);
@@ -582,17 +539,13 @@ void showAdminPanel() {
     adminWindow->show();
 }
 
-// --- Admin Product Management Panels ---
-
 void showAdminProductManagementPanel() {
     if (adminProductManagementWindow == nullptr) {
         adminProductManagementWindow = new Fl_Window(400, 350, "Admin: Manage Products");
-        adminProductManagementWindow->color(FL_CYAN); // Keeps original color
+        adminProductManagementWindow->color(FL_BLACK);
 
-        // FIX START: Storing the Fl_Box pointer and then applying labelcolor
         Fl_Box* productManageBox = new Fl_Box(50, 30, 300, 30, "Product Management Options");
-        productManageBox->labelcolor(FL_BLACK); // Ensure label is visible
-        // FIX END
+        productManageBox->labelcolor(FL_WHITE);
 
         Fl_Button* addBtn = new Fl_Button(120, 80, 160, 35, "Add Product");
         addBtn->color(FL_BLACK); addBtn->labelcolor(FL_WHITE);
@@ -637,6 +590,7 @@ void showAdminProductManagementPanel() {
 void showAdminAddProductPanel() {
     if (adminAddProductWindow == nullptr) {
         adminAddProductWindow = new Fl_Window(450, 350, "Admin: Add Product");
+        adminAddProductWindow->color(FL_BLACK);
 
         addProdIdInput = new Fl_Input(150, 40, 250, 30, "Product ID:");
         addProdNameInput = new Fl_Input(150, 80, 250, 30, "Product Name:");
@@ -656,7 +610,7 @@ void showAdminAddProductPanel() {
         
         adminAddProductWindow->end();
     }
-    addProdIdInput->value(generateUniqueProductId().c_str()); // Pre-fill with new ID
+    addProdIdInput->value(generateUniqueProductId().c_str());
     addProdNameInput->value("");
     addProdPriceInput->value("");
     addProdQuantityInput->value("");
@@ -666,6 +620,7 @@ void showAdminAddProductPanel() {
 void showAdminUpdateProductPanel() {
     if (adminUpdateProductWindow == nullptr) {
         adminUpdateProductWindow = new Fl_Window(450, 350, "Admin: Update Product");
+        adminUpdateProductWindow->color(FL_BLACK);
 
         updateProdIdInput = new Fl_Input(170, 40, 250, 30, "Product ID to Update:");
         updateNewProdNameInput = new Fl_Input(170, 90, 250, 30, "New Name (optional):");
@@ -693,26 +648,23 @@ void showAdminUpdateProductPanel() {
 
 void showAdminDisplayProductsPanel() {
     if (adminDisplayProductsWindow == nullptr) {
-        adminDisplayProductsWindow = new Fl_Window(600, 420, "Admin: Display Products"); // Increased height from 400 to 420
-        
-        // Using an Fl_Scroll to contain Fl_Multiline_Output for scrolling
-        adminProductScroll = new Fl_Scroll(10, 10, 580, 340); // Large scroll area
+        adminDisplayProductsWindow = new Fl_Window(600, 420, "Admin: Display Products");
+        adminDisplayProductsWindow->color(FL_BLACK);
+
+        adminProductScroll = new Fl_Scroll(10, 10, 580, 340);
         adminProductScroll->box(FL_THIN_DOWN_BOX);
-        adminProductScroll->type(FL_VERTICAL);
+        adminProductScroll->type(Fl_Scroll::VERTICAL);
         adminProductScroll->begin();
-            // Initialize content group with full width of scroll minus scrollbar, and minimum height
-            adminProductScrollContentGroup = new Fl_Group(0, 0, adminProductScroll->w() - Fl::scrollbar_size(), adminProductScroll->h());
+            adminProductScrollContentGroup = new Fl_Group(10, 10, adminProductScroll->w() - Fl::scrollbar_size(), 340);
             adminProductScrollContentGroup->box(FL_NO_BOX);
             adminProductScrollContentGroup->begin();
-                adminDisplayProductsOutput = new Fl_Multiline_Output(0, 0, adminProductScrollContentGroup->w(), adminProductScrollContentGroup->h());
+                adminDisplayProductsOutput = new Fl_Multiline_Output(10, 10, adminProductScrollContentGroup->w(), 340);
                 adminDisplayProductsOutput->textsize(14);
                 adminDisplayProductsOutput->box(FL_NO_BOX);
                 adminDisplayProductsOutput->align(FL_ALIGN_TOP | FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
             adminProductScrollContentGroup->end();
-            // Make the content group resizable to its direct child (the output)
             adminProductScrollContentGroup->resizable(adminDisplayProductsOutput);
         adminProductScroll->end();
-        // Make the scroll widget resizable to its direct child (the content group)
         adminProductScroll->resizable(adminProductScrollContentGroup);
 
         Fl_Button* backBtn = new Fl_Button(250, 360, 100, 35, "Back");
@@ -723,13 +675,14 @@ void showAdminDisplayProductsPanel() {
         });
         adminDisplayProductsWindow->end();
     }
-    updateAdminDisplayProductsOutput(); // Populate data on show
+    updateAdminDisplayProductsOutput();
     adminDisplayProductsWindow->show();
 }
 
 void showAdminDeleteProductPanel() {
     if (adminDeleteProductWindow == nullptr) {
         adminDeleteProductWindow = new Fl_Window(350, 200, "Admin: Delete Product");
+        adminDeleteProductWindow->color(FL_BLACK);
 
         deleteProdIdInput = new Fl_Input(100, 50, 200, 30, "Product ID:");
 
@@ -749,15 +702,13 @@ void showAdminDeleteProductPanel() {
     adminDeleteProductWindow->show();
 }
 
-
-// --- Customer Management Panels ---
-
 void showCustomerPanel() {
     if (customerWindow == nullptr) {
-        customerWindow = new Fl_Window(400, 350, "Customer Panel"); // Increased height
-        customerWindow->color(FL_BACKGROUND_COLOR); // Changed from FL_LIGHT_YELLOW to FL_BACKGROUND_COLOR (Line 752)
+        customerWindow = new Fl_Window(400, 350, "Customer Panel");
+        customerWindow->color(FL_BLACK);
 
-        new Fl_Box(50, 30, 300, 30, "Welcome to the Customer Panel!");
+        Fl_Box* welcomeBox = new Fl_Box(50, 30, 300, 30, "Welcome to the Customer Panel!");
+        welcomeBox->labelcolor(FL_WHITE);
 
         Fl_Button* buyBtn = new Fl_Button(120, 80, 160, 35, "Buy Products");
         buyBtn->color(FL_BLACK); buyBtn->labelcolor(FL_WHITE);
@@ -780,7 +731,7 @@ void showCustomerPanel() {
             showCustomerManagementPanel();
         });
 
-        Fl_Button* signOutBtn = new Fl_Button(120, 230, 160, 35, "Sign Out"); 
+        Fl_Button* signOutBtn = new Fl_Button(120, 230, 160, 35, "Sign Out");
         signOutBtn->color(FL_BLACK); signOutBtn->labelcolor(FL_WHITE);
         signOutBtn->callback([](Fl_Widget*, void*) {
             if (customerWindow) customerWindow->hide();
@@ -792,17 +743,13 @@ void showCustomerPanel() {
     customerWindow->show();
 }
 
-// --- Customer Management Panels ---
-
 void showCustomerManagementPanel() {
     if (customerManagementWindow == nullptr) {
         customerManagementWindow = new Fl_Window(400, 350, "Customer: Manage Customers");
-        customerManagementWindow->color(FL_MAGENTA);
+        customerManagementWindow->color(FL_BLACK);
 
-        // FIX START: Storing the Fl_Box pointer and then applying labelcolor
         Fl_Box* custManageBox = new Fl_Box(50, 30, 300, 30, "Customer Management Options");
-        custManageBox->labelcolor(FL_BLACK); // Ensure label is visible
-        // FIX END
+        custManageBox->labelcolor(FL_WHITE);
 
         Fl_Button* addBtn = new Fl_Button(120, 80, 160, 35, "Add Customer");
         addBtn->color(FL_BLACK); addBtn->labelcolor(FL_WHITE);
@@ -847,6 +794,7 @@ void showCustomerManagementPanel() {
 void showCustomerAddCustomerPanel() {
     if (customerAddCustomerWindow == nullptr) {
         customerAddCustomerWindow = new Fl_Window(450, 450, "Customer: Add Customer");
+        customerAddCustomerWindow->color(FL_BLACK);
 
         addCustIdInput = new Fl_Input(150, 40, 250, 30, "Customer ID:");
         addCustFirstNameInput = new Fl_Input(150, 80, 250, 30, "First Name:");
@@ -885,6 +833,7 @@ void showCustomerAddCustomerPanel() {
 void showCustomerUpdateCustomerPanel() {
     if (customerUpdateCustomerWindow == nullptr) {
         customerUpdateCustomerWindow = new Fl_Window(450, 500, "Customer: Update Customer");
+        customerUpdateCustomerWindow->color(FL_BLACK);
 
         updateCustIdInput = new Fl_Input(170, 40, 250, 30, "Customer ID to Update:");
         updateNewCustFirstNameInput = new Fl_Input(170, 90, 250, 30, "New First Name (opt):");
@@ -921,10 +870,9 @@ void showCustomerUpdateCustomerPanel() {
 
 void showCustomerDisplayCustomersPanel() {
     if (customerDisplayCustomersWindow == nullptr) {
-        customerDisplayCustomersWindow = new Fl_Window(700, 400, "Customer: Display Customers"); // Wider for more customer info
+        customerDisplayCustomersWindow = new Fl_Window(700, 400, "Customer: Display Customers");
+        customerDisplayCustomersWindow->color(FL_BLACK);
 
-        // For simplicity, directly using Fl_Multiline_Output for customers for now.
-        // If it needs scrolling, add Fl_Scroll and Fl_Group like in adminDisplayProductsPanel.
         customerDisplayCustomersOutput = new Fl_Multiline_Output(10, 10, 680, 340);
         customerDisplayCustomersOutput->textsize(14);
         customerDisplayCustomersOutput->box(FL_THIN_DOWN_BOX);
@@ -938,13 +886,14 @@ void showCustomerDisplayCustomersPanel() {
         });
         customerDisplayCustomersWindow->end();
     }
-    updateCustomerDisplayOutput(); // Populate data on show
+    updateCustomerDisplayOutput();
     customerDisplayCustomersWindow->show();
 }
 
 void showCustomerDeleteCustomerPanel() {
     if (customerDeleteCustomerWindow == nullptr) {
         customerDeleteCustomerWindow = new Fl_Window(350, 200, "Customer: Delete Customer");
+        customerDeleteCustomerWindow->color(FL_BLACK);
 
         deleteCustIdInput = new Fl_Input(100, 50, 200, 30, "Customer ID:");
 
@@ -964,66 +913,52 @@ void showCustomerDeleteCustomerPanel() {
     customerDeleteCustomerWindow->show();
 }
 
-
-// --- Existing Shared Panels ---
-
-// Dynamically creates and updates product buttons in the customer's "Buy Products" scroll area.
 void updateCustomerProductDisplay() {
     if (!customerProductScroll || !customerProductScrollContentGroup) return;
 
-    // Remove all children before adding new ones
     customerProductScrollContentGroup->clear();
     customerProductScrollContentGroup->begin();
 
     int y_offset = 10;
     const int button_height = 30;
     const int button_spacing = 10;
-    
-    // Calculate button width based on the content group's width
-    const int button_width = customerProductScrollContentGroup->w() - 20; // 10px padding on each side
+    const int button_width = customerProductScrollContentGroup->w() - 20;
 
-    // Ensure the content group's width is set correctly before adding buttons
-    // The width calculation should ideally be relative to its parent scroll
     customerProductScrollContentGroup->size(customerProductScroll->w() - Fl::scrollbar_size(), customerProductScrollContentGroup->h());
-
 
     for (size_t i = 0; i < allProducts.size(); i++) {
         std::string buttonLabel = allProducts[i].name;
         buttonLabel += " (Rs.";
         buttonLabel += std::to_string(allProducts[i].price);
-        buttonLabel += ") [Qty: " + std::to_string(allProducts[i].quantity) + "]"; // Display quantity
+        buttonLabel += ") [Qty: " + std::to_string(allProducts[i].quantity) + "]";
 
         Fl_Button* prodBtn = new Fl_Button(10, y_offset, button_width, button_height);
-        prodBtn->label(buttonLabel.c_str()); // FLTK copies this string internally
+        prodBtn->label(buttonLabel.c_str());
         prodBtn->callback(addProductToCart, reinterpret_cast<void*>(i));
         prodBtn->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE | FL_ALIGN_WRAP);
         prodBtn->box(FL_UP_BOX);
-        prodBtn->color(FL_BLACK); prodBtn->labelcolor(FL_WHITE); // Styling
+        prodBtn->color(FL_BLACK); prodBtn->labelcolor(FL_WHITE);
 
         y_offset += (button_height + button_spacing);
     }
     customerProductScrollContentGroup->end();
 
-    // Calculate the necessary height for the contained widgets
-    int content_height = y_offset + 10; // Add 10px bottom margin
-    
-    // Ensure content_height is at least the scroll area's visible height
+    int content_height = y_offset + 10;
     int min_scroll_height = customerProductScroll->h();
     customerProductScrollContentGroup->size(customerProductScrollContentGroup->w(), max(min_scroll_height, content_height));
     
-    // Reset scroll position to top.
     customerProductScroll->scroll_to(0, 0);
-    
     customerProductScrollContentGroup->redraw();
     customerProductScroll->redraw();
 }
 
-
 void showBuyProductsPanel() {
     if (buyProductsWindow == nullptr) {
         buyProductsWindow = new Fl_Window(500, 520, "Buy Products");
+        buyProductsWindow->color(FL_BLACK);
 
-        new Fl_Box(20, 10, 300, 30, "Available Products:");
+        Fl_Box* productsLabel = new Fl_Box(20, 10, 300, 30, "Available Products:");
+        productsLabel->labelcolor(FL_WHITE);
 
         customerProductScroll = new Fl_Scroll(20, 50, 250, 200, "");
         customerProductScroll->box(FL_THIN_DOWN_BOX);
@@ -1032,9 +967,9 @@ void showBuyProductsPanel() {
         customerProductScroll->begin();
             customerProductScrollContentGroup = new Fl_Group(0, 0, customerProductScroll->w() - Fl::scrollbar_size(), customerProductScroll->h());
             customerProductScrollContentGroup->box(FL_NO_BOX);
-            customerProductScrollContentGroup->end(); // This closes the group
+            customerProductScrollContentGroup->end();
         customerProductScroll->end();
-        customerProductScroll->resizable(customerProductScrollContentGroup); // This is the correct resizable for the scroll's content.
+        customerProductScroll->resizable(customerProductScrollContentGroup);
 
         productOutput = new Fl_Multiline_Output(20, 260, 460, 180, "Products in Cart:");
         productOutput->textsize(14);
@@ -1042,11 +977,11 @@ void showBuyProductsPanel() {
         productOutput->box(FL_DOWN_BOX);
 
         Fl_Button* deleteLastBtn = new Fl_Button(350, 450, 120, 30, "Delete Last");
-        deleteLastBtn->color(FL_BLACK); deleteLastBtn->labelcolor(FL_WHITE); // Styling
+        deleteLastBtn->color(FL_BLACK); deleteLastBtn->labelcolor(FL_WHITE);
         deleteLastBtn->callback(deleteLastProduct);
 
         Fl_Button* backBtn = new Fl_Button(200, 480, 100, 30, "Back");
-        backBtn->color(FL_BLACK); backBtn->labelcolor(FL_WHITE); // Styling
+        backBtn->color(FL_BLACK); backBtn->labelcolor(FL_WHITE);
         backBtn->callback([](Fl_Widget*, void*) {
             if (buyProductsWindow) buyProductsWindow->hide();
             showCustomerPanel();
@@ -1062,18 +997,19 @@ void showBuyProductsPanel() {
 void showReturnProductPanel() {
     if (returnProductWindow == nullptr) {
         returnProductWindow = new Fl_Window(400, 200, "Return Product");
+        returnProductWindow->color(FL_BLACK);
 
         returnProductNameInput = new Fl_Input(150, 40, 200, 30, "Product Name:");
 
         Fl_Button* returnBtn = new Fl_Button(150, 90, 100, 30, "Return");
-        returnBtn->color(FL_BLACK); returnBtn->labelcolor(FL_WHITE); // Styling
+        returnBtn->color(FL_BLACK); returnBtn->labelcolor(FL_WHITE);
         returnBtn->callback(processReturnProduct);
 
         returnMessageBox = new Fl_Box(20, 140, 360, 30, "");
         returnMessageBox->labelcolor(FL_RED);
 
         Fl_Button* backBtn = new Fl_Button(150, 170, 100, 30, "Back");
-        backBtn->color(FL_BLACK); backBtn->labelcolor(FL_WHITE); // Styling
+        backBtn->color(FL_BLACK); backBtn->labelcolor(FL_WHITE);
         backBtn->callback([](Fl_Widget*, void*) {
             if (returnProductWindow) returnProductWindow->hide();
             showCustomerPanel();
@@ -1090,8 +1026,6 @@ void validateCustomerSignIn(Fl_Widget* w, void* data) {
     Fl_Input* user = static_cast<Fl_Input*>(customerSignInWindow->child(0));
     Fl_Input* pass = static_cast<Fl_Input*>(customerSignInWindow->child(1));
 
-    // For now, simple check: If username and password match any registered customer
-    // In a real application, you'd check against a persistent user database.
     bool foundCustomer = false;
     for (const auto& cust : allCustomers) {
         if (cust.username == user->value() && cust.password == pass->value()) {
@@ -1106,13 +1040,14 @@ void validateCustomerSignIn(Fl_Widget* w, void* data) {
     } else {
         fl_alert("Invalid customer username or password!");
     }
-    user->value(""); // Clear fields after attempt
+    user->value("");
     pass->value("");
 }
 
 void showCustomerSignInPanel() {
     if (customerSignInWindow == nullptr) {
         customerSignInWindow = new Fl_Window(300, 250, "Customer Sign In");
+        customerSignInWindow->color(FL_BLACK);
 
         Fl_Input* user = new Fl_Input(100, 30, 150, 30, "Username:");
         Fl_Input* pass = new Fl_Input(100, 70, 150, 30, "Password:");
@@ -1131,7 +1066,6 @@ void showCustomerSignInPanel() {
 
         customerSignInWindow->end();
     }
-    // Clear fields every time the sign-in panel is shown
     Fl_Input* usernameField = static_cast<Fl_Input*>(customerSignInWindow->child(0));
     if (usernameField) {
         usernameField->value("");
@@ -1147,17 +1081,18 @@ void showCustomerSignInPanel() {
 void showAdminSignInPanel() {
     if (adminSignInWindow == nullptr) {
         adminSignInWindow = new Fl_Window(300, 250, "Admin Sign In");
+        adminSignInWindow->color(FL_BLACK);
 
         Fl_Input* user = new Fl_Input(100, 30, 150, 30, "Username:");
         Fl_Input* pass = new Fl_Input(100, 70, 150, 30, "Password:");
         pass->type(FL_SECRET_INPUT);
 
         Fl_Button* loginBtn = new Fl_Button(100, 120, 100, 30, "Login");
-        loginBtn->color(FL_BLACK); loginBtn->labelcolor(FL_WHITE); // Styling
+        loginBtn->color(FL_BLACK); loginBtn->labelcolor(FL_WHITE);
         loginBtn->callback(validateAdminSignIn);
 
         Fl_Button* backToChoiceBtn = new Fl_Button(80, 170, 140, 30, "Back to Choice");
-        backToChoiceBtn->color(FL_BLACK); backToChoiceBtn->labelcolor(FL_WHITE); // Styling
+        backToChoiceBtn->color(FL_BLACK); backToChoiceBtn->labelcolor(FL_WHITE);
         backToChoiceBtn->callback([](Fl_Widget*, void*) {
             if (adminSignInWindow) adminSignInWindow->hide();
             showLoginChoicePanel();
@@ -1204,13 +1139,12 @@ void validateSignUp(Fl_Widget*, void*) {
         return;
     }
 
-    if (user == "admin") { 
+    if (user == "admin") {
         messageBox->labelcolor(FL_RED);
         messageBox->label("Username 'admin' is reserved.");
         return;
     }
 
-    // Check if username already exists in `allCustomers` (case-sensitive)
     for (const auto& cust : allCustomers) {
         if (cust.username == user) {
             messageBox->labelcolor(FL_RED);
@@ -1219,13 +1153,11 @@ void validateSignUp(Fl_Widget*, void*) {
         }
     }
 
-    // If validation passes, add new customer to in-memory list
     allCustomers.push_back({generateUniqueCustomerId(), first, last, user, pass, phone, email, address});
 
     messageBox->labelcolor(FL_DARK_GREEN);
     messageBox->label("Sign Up Successful! You can now choose to sign in.");
 
-    // Clear fields
     firstNameInput->value("");
     lastNameInput->value("");
     usernameInput->value("");
@@ -1234,56 +1166,66 @@ void validateSignUp(Fl_Widget*, void*) {
     phoneInput->value("");
     emailInput->value("");
     addressInput->value("");
-    showPasswordCheck->value(0); // Uncheck "Show Password"
-    togglePasswordVisibility(nullptr, nullptr); // Reset password fields type
+    showPasswordCheck->value(0);
+    togglePasswordVisibility(nullptr, nullptr);
 
     Fl::add_timeout(1.5, [](void*){
         if (mainWindow) mainWindow->hide();
-        showLoginChoicePanel(); 
+        showLoginChoicePanel();
     }, nullptr);
 }
 
 void showSignUpPanel() {
-    if (mainWindow == nullptr) { 
+    if (mainWindow == nullptr) {
         mainWindow = new Fl_Window(750, 550, "E-Mart Sign Up");
+        mainWindow->color(FL_BLACK);
 
-        Fl_PNG_Image* logo = new Fl_PNG_Image("logi.png"); 
+        Fl_PNG_Image* logo = new Fl_PNG_Image("logi.png");
         Fl_Box* logoBox = new Fl_Box(175, 5, 120, 60);
         logoBox->image(logo);
         if (logo->fail()) fl_alert("Image 'logi.png' failed to load! Make sure it's in the same directory as the executable.");
 
-        new Fl_Box(50, 30, 100, 30, "First Name:");
+        Fl_Box* firstNameLabel = new Fl_Box(50, 30, 100, 30, "First Name:");
+        firstNameLabel->labelcolor(FL_WHITE);
         firstNameInput = new Fl_Input(160, 30, 250, 30);
 
-        new Fl_Box(50, 70, 100, 30, "Last Name:");
+        Fl_Box* lastNameLabel = new Fl_Box(50, 70, 100, 30, "Last Name:");
+        lastNameLabel->labelcolor(FL_WHITE);
         lastNameInput = new Fl_Input(160, 70, 250, 30);
 
-        new Fl_Box(50, 110, 100, 30, "Username:");
+        Fl_Box* usernameLabel = new Fl_Box(50, 110, 100, 30, "Username:");
+        usernameLabel->labelcolor(FL_WHITE);
         usernameInput = new Fl_Input(160, 110, 250, 30);
 
-        new Fl_Box(50, 150, 100, 30, "Password:");
+        Fl_Box* passwordLabel = new Fl_Box(50, 150, 100, 30, "Password:");
+        passwordLabel->labelcolor(FL_WHITE);
         passwordInput = new Fl_Input(160, 150, 250, 30);
         passwordInput->type(FL_SECRET_INPUT);
 
-        new Fl_Box(50, 190, 100, 30, "Confirm Password:");
+        Fl_Box* confirmPasswordLabel = new Fl_Box(50, 190, 100, 30, "Confirm Password:");
+        confirmPasswordLabel->labelcolor(FL_WHITE);
         confirmPasswordInput = new Fl_Input(160, 190, 250, 30);
         confirmPasswordInput->type(FL_SECRET_INPUT);
 
         showPasswordCheck = new Fl_Check_Button(160, 230, 150, 25, "Show Password");
+        showPasswordCheck->labelcolor(FL_WHITE);
         showPasswordCheck->callback(togglePasswordVisibility);
 
-        new Fl_Box(50, 270, 100, 30, "Phone:");
+        Fl_Box* phoneLabel = new Fl_Box(50, 270, 100, 30, "Phone:");
+        phoneLabel->labelcolor(FL_WHITE);
         phoneInput = new Fl_Input(160, 270, 250, 30);
 
-        new Fl_Box(50, 310, 100, 30, "Email:");
+        Fl_Box* emailLabel = new Fl_Box(50, 310, 100, 30, "Email:");
+        emailLabel->labelcolor(FL_WHITE);
         emailInput = new Fl_Input(160, 310, 250, 30);
 
-        new Fl_Box(50, 350, 100, 30, "Address:");
+        Fl_Box* addressLabel = new Fl_Box(50, 350, 100, 30, "Address:");
+        addressLabel->labelcolor(FL_WHITE);
         addressInput = new Fl_Input(160, 350, 250, 30);
 
         Fl_Button* signupButton = new Fl_Button(160, 400, 120, 35, "Sign Up");
-        signupButton->color(FL_BLACK); signupButton->labelcolor(FL_WHITE); // Styling
-        signupButton->callback(validateSignUp); 
+        signupButton->color(FL_BLACK); signupButton->labelcolor(FL_WHITE);
+        signupButton->callback(validateSignUp);
 
         messageBox = new Fl_Box(50, 450, 400, 30, "");
         messageBox->labelcolor(FL_RED);
@@ -1295,26 +1237,31 @@ void showSignUpPanel() {
 
 void showLoginChoicePanel() {
     if (loginChoiceWindow == nullptr) {
-        loginChoiceWindow = new Fl_Window(350, 200, "Login Choice");
-        loginChoiceWindow->color(FL_DARK_CYAN); // Add some styling
+        loginChoiceWindow = new Fl_Window(350, 250, "Login Choice");
+        loginChoiceWindow->color(FL_BLACK);
 
-        // FIX START: Storing the Fl_Box pointer and then applying labelcolor
         Fl_Box* loginChoiceBox = new Fl_Box(50, 30, 250, 30, "Please choose your login type:");
-        loginChoiceBox->labelcolor(FL_BLACK); // Ensure label is visible
-        // FIX END
+        loginChoiceBox->labelcolor(FL_WHITE);
 
         Fl_Button* customerLoginBtn = new Fl_Button(100, 80, 150, 35, "Customer Login");
-        customerLoginBtn->color(FL_DARK_BLUE); customerLoginBtn->labelcolor(FL_WHITE);
+        customerLoginBtn->color(FL_BLACK); customerLoginBtn->labelcolor(FL_WHITE);
         customerLoginBtn->callback([](Fl_Widget*, void*) {
             if (loginChoiceWindow) loginChoiceWindow->hide();
-            showCustomerSignInPanel(); // Go to the dedicated customer sign-in
+            showCustomerSignInPanel();
         });
 
         Fl_Button* adminLoginBtn = new Fl_Button(100, 130, 150, 35, "Admin Login");
-        adminLoginBtn->color(FL_DARK_RED); adminLoginBtn->labelcolor(FL_WHITE);
+        adminLoginBtn->color(FL_BLACK); adminLoginBtn->labelcolor(FL_WHITE);
         adminLoginBtn->callback([](Fl_Widget*, void*) {
             if (loginChoiceWindow) loginChoiceWindow->hide();
-            showAdminSignInPanel(); // Go to the admin sign-in panel
+            showAdminSignInPanel();
+        });
+
+        Fl_Button* backToSignUpBtn = new Fl_Button(100, 180, 150, 35, "Back to Sign Up");
+        backToSignUpBtn->color(FL_BLACK); backToSignUpBtn->labelcolor(FL_WHITE);
+        backToSignUpBtn->callback([](Fl_Widget*, void*) {
+            if (loginChoiceWindow) loginChoiceWindow->hide();
+            showSignUpPanel();
         });
 
         loginChoiceWindow->end();
@@ -1322,9 +1269,7 @@ void showLoginChoicePanel() {
     loginChoiceWindow->show();
 }
 
-
 int main() {
-    // Initial default products
     allProducts.push_back({"P101", "Milk", 150, 100});
     allProducts.push_back({"P102", "Bread", 100, 50});
     allProducts.push_back({"P103", "Rice", 200, 200});
@@ -1352,13 +1297,9 @@ int main() {
     allProducts.push_back({"P125", "Cucumbers", 45, 90});
     allProducts.push_back({"P126", "Spinach", 55, 80});
 
-
-    // Initial default customers (for testing customer login)
     allCustomers.push_back({"C1", "John", "Doe", "john.doe", "password123", "123-456-7890", "john@example.com", "123 Main St"});
     allCustomers.push_back({"C2", "Jane", "Smith", "jane.smith", "mypassword", "987-654-3210", "jane@example.com", "456 Oak Ave"});
 
-
-    // Start by showing the sign-up panel
     showSignUpPanel();
     return Fl::run();
 }
