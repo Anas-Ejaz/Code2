@@ -9,6 +9,8 @@
 #include <FL/Fl_PNG_Image.H>
 #include <FL/fl_ask.H>
 #include <FL/Fl_Scroll.H>
+#include <stdexcept>
+#include <fstream>
 
 using namespace std;
 
@@ -277,6 +279,14 @@ public:
 
 class product{
 public:
+    linkedList l;
+    linkedList::productNode* productHead = nullptr;
+    Fl_Input* productIdInput;
+    Fl_Input* productNameInput;
+    Fl_Input* productPriceInput;
+    Fl_Input* productQuantityInput;
+
+
     int productPage(){
         if(Fl::first_window()) Fl::first_window()->hide();
 
@@ -338,43 +348,66 @@ public:
 
         Fl_Box* productIdLabel = new Fl_Box(300, 150, 80, 30, "Product ID:");
         productIdLabel->labelcolor(FL_WHITE);
-        Fl_Input* productIdInput = new Fl_Input(400, 150, 200, 30);
+        productIdInput = new Fl_Input(400, 150, 200, 30);
         productIdInput->type(FL_NORMAL_INPUT);
 
         Fl_Box* productNameLabel = new Fl_Box(300, 220, 80, 30, "Product Name:");
         productNameLabel->labelcolor(FL_WHITE);
-        Fl_Input* productNameInput = new Fl_Input(400, 220, 200, 30);
+        productNameInput = new Fl_Input(400, 220, 200, 30);
         productNameInput->type(FL_NORMAL_INPUT);
 
         Fl_Box* productPriceLabel = new Fl_Box(300, 290, 80, 30, "Product Price:");
         productPriceLabel->labelcolor(FL_WHITE);
-        Fl_Input* productPriceInput = new Fl_Input(400, 290, 200, 30);
+        productPriceInput = new Fl_Input(400, 290, 200, 30);
         productPriceInput->type(FL_NORMAL_INPUT);
 
         Fl_Box* productQuantityLabel = new Fl_Box(300, 360, 80, 30, "Quantity:");
         productQuantityLabel->labelcolor(FL_WHITE);
-        Fl_Input* productQuantityInput = new Fl_Input(400, 360, 200, 30);
+        productQuantityInput = new Fl_Input(400, 360, 200, 30);
         productQuantityInput->type(FL_NORMAL_INPUT);
 
         Fl_Button* submitBtn = new Fl_Button(250, 450, 200, 50, "Submit");
         submitBtn->color(FL_BLUE);
         submitBtn->labelcolor(FL_WHITE);
         submitBtn->callback([](Fl_Widget*, void* data) {
-            int id = stoi(((Fl_Input*)data)->value());
-            string name = ((Fl_Input*)data)->value();
-            float price = stof(((Fl_Input*)data)->value());
-            int quantity = stoi(((Fl_Input*)data)->value());
+             product* p = (product*)data;
 
-            if (id < 0 || price < 0 || quantity < 0) {
-                fl_alert("Invalid input! Please enter valid values.");
-                return;
-            }else if (name.empty()) {
-                fl_alert("Product name cannot be empty!");
-                return;
+            try {
+                int id = stoi(p->productIdInput->value());
+                string name = p->productNameInput->value();
+                float price = stof(p->productPriceInput->value());
+                int quantity = stoi(p->productQuantityInput->value());
+
+                if (id < 0 || price < 0 || quantity < 0) {
+                    fl_alert("Invalid input! Please enter valid values.");
+                    return;
+                }
+                if (name.empty()) {
+                    fl_alert("Product name cannot be empty!");
+                    return;
+                }
+
+                p->addProduct(id, name, price, quantity);
+                p->productPage();
+                p->productIdInput->value("");   
+                p->productNameInput->value("");
+                p->productPriceInput->value("");
+                p->productQuantityInput->value("");
+                fl_message("Product added successfully!");
+
+                ofstream file("products.txt", ios::app); // Open in append mode
+                if (file.is_open()) {
+                    file << id << "\t" << name << "\t" << price << "\t" << quantity << "\n";
+                    file.close();
+                }else {
+                    fl_alert("Error opening file to save product data.");
+                }
+
+            } catch (const invalid_argument&) {
+                fl_alert("Invalid input! Ensure all fields are filled correctly.");
+            } catch (const out_of_range&) {
+                fl_alert("Input values are out of range. Please try again.");
             }
-
-            ((product*)data)->addProduct(id, name, price, quantity);
-            ((product*)data)->productPage();
         }, this);
 
         Fl_Button* returnBtn = new Fl_Button(500, 450, 200, 50, "Return");
@@ -403,8 +436,6 @@ public:
         Fl_Scroll* scroll = new Fl_Scroll(50, 100, viewProductWindow->w() - 100, viewProductWindow->h() - 200);
         scroll->color(FL_BLACK);
 
-        linkedList l;
-        linkedList::productNode* productHead = nullptr;
         string productList = l.displayProducts(productHead);
 
         Fl_Multiline_Output* output = new Fl_Multiline_Output(60, 110, scroll->w() - 20, scroll->h() - 20);
@@ -432,11 +463,8 @@ public:
 
     void goAdminPanel();
     void addProduct(int id, string name, float price, int quantity) {
-        linkedList l;
-        linkedList::productNode* productHead = nullptr;
         l.insertProduct(productHead, id, name, price, quantity);
         fl_message("Product added successfully!");
-
     }
 };
 
@@ -785,11 +813,29 @@ void employee::goAdminPanel() {
 
  
 string linkedList::displayProducts(productNode* head) {
+       if(head == nullptr) {
+            
+        ifstream file("products.txt");
+        if (file.is_open()) {
+            int id;
+            string name;
+            float price;
+            int quantity;
+
+            while (file >> id >> name >> price >> quantity) {
+                insertProduct(head, id, name, price, quantity);
+            }
+
+            file.close();
+        }
+    }
+
         if (head == nullptr) {
             return "No products available.";
         }
 
-        string result = "ID\tName\t\tPrice\tQuantity\n";
+
+        string result = "ID\tName\t\tPrice\t     Quantity\n";
         productNode* temp = head;
         while (temp != nullptr) {
             result += to_string(temp->productId) + "\t" +
@@ -800,6 +846,7 @@ string linkedList::displayProducts(productNode* head) {
         }
         return result;
     }    
+
 string linkedList::displayEmployees(employeeNode* head) {
         if (head == nullptr) {
             return "No employees available.";

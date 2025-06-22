@@ -58,6 +58,7 @@
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "files.associations": {
     "string": "cpp",
-    "format": "cpp"
+    "format": "cpp",
+    "iosfwd": "cpp"
   }
 }
