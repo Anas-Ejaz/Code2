@@ -936,6 +936,7 @@ void employee::goAdminPanel() {
 
  
 string linkedList::displayProducts(productNode* head) {      
+
         ifstream file("products.txt");
         if (file.is_open()) {
             int id;
@@ -949,6 +950,7 @@ string linkedList::displayProducts(productNode* head) {
 
             file.close();
         }
+            
 
         if (head == nullptr) {
             return "No products available.";
