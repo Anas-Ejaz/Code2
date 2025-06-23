@@ -11,6 +11,7 @@
 #include <FL/Fl_Scroll.H>
 #include <stdexcept>
 #include <fstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -79,7 +80,7 @@ class linkedList{
             productNode* temp = current->next;
             current->next = current->next->next;
             delete temp;
-        }
+        }   
     }
 
     string displayProducts(productNode* head);
@@ -134,6 +135,14 @@ class linkedList{
 
 class employee{
 public:
+    linkedList l;
+    linkedList::employeeNode* empHead = nullptr;
+
+    Fl_Input* employeeIdInput;
+    Fl_Input* employeeNameInput;
+    Fl_Input* employeePositionInput;
+    Fl_Input* employeeSalaryInput;
+
     int employeePage(){
         if(Fl::first_window()) Fl::first_window()->hide();
 
@@ -196,30 +205,66 @@ public:
 
         Fl_Box* employeeIdLabel = new Fl_Box(300, 150, 80, 30, "Employee ID:");
         employeeIdLabel->labelcolor(FL_WHITE);
-        Fl_Input* employeeIdInput = new Fl_Input(400, 150, 200, 30);
+        employeeIdInput = new Fl_Input(400, 150, 200, 30);
         employeeIdInput->type(FL_NORMAL_INPUT);
 
         Fl_Box* employeeNameLabel = new Fl_Box(300, 220, 80, 30, "Employee Name:");
         employeeNameLabel->labelcolor(FL_WHITE);
-        Fl_Input* employeeNameInput = new Fl_Input(400, 220, 200, 30);
+        employeeNameInput = new Fl_Input(400, 220, 200, 30);
         employeeNameInput->type(FL_NORMAL_INPUT);
 
         Fl_Box* employeePositionLabel = new Fl_Box(300, 290, 80, 30, "Designation:");
         employeePositionLabel->labelcolor(FL_WHITE);
-        Fl_Input* employeePositionInput = new Fl_Input(400, 290, 200, 30);
+        employeePositionInput = new Fl_Input(400, 290, 200, 30);
         employeePositionInput->type(FL_NORMAL_INPUT);
 
         Fl_Box* employeeSalaryLabel = new Fl_Box(300, 360, 80, 30, "Salary:");
         employeeSalaryLabel->labelcolor(FL_WHITE);
-        Fl_Input* employeeSalaryInput = new Fl_Input(400, 360, 200, 30);
+        employeeSalaryInput = new Fl_Input(400, 360, 200, 30);
         employeeSalaryInput->type(FL_NORMAL_INPUT);
 
         Fl_Button* submitBtn = new Fl_Button(250, 450, 200, 50, "Submit");
         submitBtn->color(FL_BLUE);
         submitBtn->labelcolor(FL_WHITE);
         submitBtn->callback([](Fl_Widget*, void* data) {
-            fl_message("Employee added successfully!");
-            ((employee*)data)->employeePage();
+            employee* e = (employee*)data;
+
+            try {
+                int id = stoi(e->employeeIdInput->value());
+                string name = e->employeeNameInput->value();
+                float salary = stof(e->employeeSalaryInput->value());
+                string designation = e->employeePositionInput->value();
+
+                if (id < 0 || salary < 0) {
+                    fl_alert("Invalid input! Please enter valid values.");
+                    return;
+                }
+                if (name.empty()) {
+                    fl_alert("Employee name cannot be empty!");
+                    return;
+                }
+
+                e->addEmployee(id, name, designation, salary);  
+                e->employeePage();
+                e->employeeIdInput->value("");   
+                e->employeeNameInput->value("");
+                e->employeePositionInput->value("");
+                e->employeeSalaryInput->value("");
+                fl_message("Employee added successfully!");
+
+                ofstream file("employee.txt", ios::app); // Open in append mode
+                if (file.is_open()) {
+                    file << id << "\t" << name << "\t" << designation << "\t" << salary << "\n";
+                    file.close();
+                }else {
+                    fl_alert("Error opening file to save product data.");
+                }
+
+            } catch (const invalid_argument&) {
+                fl_alert("Invalid input! Ensure all fields are filled correctly.");
+            } catch (const out_of_range&) {
+                fl_alert("Input values are out of range. Please try again.");
+            }
         }, this);
 
         Fl_Button* returnBtn = new Fl_Button(500, 450, 200, 50, "Return");
@@ -274,6 +319,10 @@ public:
     }
 
     void goAdminPanel(); 
+
+    void addEmployee(int id, string name, string position, float salary) {
+        l.insertEmployee(empHead, id, name, position, salary);
+    }
 };
 
 
@@ -319,7 +368,7 @@ public:
         deleteProductBtn->color(FL_BLUE);
         deleteProductBtn->labelcolor(FL_WHITE);   
         deleteProductBtn->callback([](Fl_Widget*, void* data) {
-            // Functionality to delete a product
+            ((product*)data)->deleteProduct();
         }, this);
 
         Fl_Button* returnBtn = new Fl_Button(390, productWindow->h() - 150, 120, 35, "Return");
@@ -460,11 +509,85 @@ public:
         return Fl::run();
     }
 
+    int deleteProduct(){
+        if(Fl::first_window()) Fl::first_window()->hide();
+
+        Fl_Window* deleteProductWindow = new Fl_Window(900, 600, "E-Mart Product Management");
+        deleteProductWindow->color(FL_BLACK);
+
+        Fl_Box* heading = new Fl_Box(0, 40, deleteProductWindow->w(), 50, "Delete Product");
+        heading->labelsize(30);
+        heading->labelcolor(FL_WHITE);
+        heading->align(FL_ALIGN_CENTER);
+
+        Fl_Scroll* scroll = new Fl_Scroll(50, 100, deleteProductWindow->w() - 400, deleteProductWindow->h() - 200);
+        scroll->color(FL_BLACK);
+        
+        string productList = l.displayProducts(productHead);
+
+        Fl_Multiline_Output* output = new Fl_Multiline_Output(60, 110, scroll->w() - 20, scroll->h() - 20);
+        output->color(FL_WHITE);
+        output->textcolor(FL_BLACK);
+        output->value(productList.c_str());
+
+        scroll->add(output);
+        scroll->end();
+
+        int rightStartX = 550; // X-position for right side elements
+
+        Fl_Box* productIdLabel = new Fl_Box(rightStartX, 150, 100, 30, "Product ID:");
+        productIdLabel->labelcolor(FL_WHITE);
+
+        productIdInput = new Fl_Input(rightStartX + 110, 150, 200, 30);
+        productIdInput->type(FL_NORMAL_INPUT);
+
+        Fl_Button* submitBtn = new Fl_Button(rightStartX + 100, 220, 150, 40, "Delete");
+        submitBtn->color(FL_BLUE);
+        submitBtn->labelcolor(FL_WHITE);
+        submitBtn->callback([](Fl_Widget*, void* data) {
+            product* p = (product*)data;
+            int id = stoi(p->productIdInput->value());
+
+            ifstream inFile("products.txt");
+            ofstream outFile("temp.txt");
+
+            string line;
+            while (getline(inFile, line)) {
+                int currentId = stoi(line.substr(0, line.find('\t')));
+                if (currentId != id) {
+                    outFile << line << '\n';
+                }
+            }
+
+            inFile.close();
+            outFile.close();
+
+            remove("products.txt");
+            rename("temp.txt", "products.txt");
+
+            p->l.deleteProduct(p->productHead, id);
+            fl_message("Product deleted successfully!");
+            p->productPage();
+            p->productIdInput->value("");
+        }, this);
+
+        Fl_Button* returnBtn = new Fl_Button(rightStartX + 100, 280, 150, 40, "Return");
+        returnBtn->color(FL_BLUE);
+        returnBtn->labelcolor(FL_WHITE);
+        returnBtn->callback([](Fl_Widget*, void* data) {
+            ((product*)data)->productPage();
+        }, this);
+
+        deleteProductWindow->end();
+        deleteProductWindow->show();
+        
+        return Fl::run();
+    }
+
 
     void goAdminPanel();
     void addProduct(int id, string name, float price, int quantity) {
         l.insertProduct(productHead, id, name, price, quantity);
-        fl_message("Product added successfully!");
     }
 };
 
@@ -812,9 +935,7 @@ void employee::goAdminPanel() {
     }
 
  
-string linkedList::displayProducts(productNode* head) {
-       if(head == nullptr) {
-            
+string linkedList::displayProducts(productNode* head) {      
         ifstream file("products.txt");
         if (file.is_open()) {
             int id;
@@ -828,19 +949,18 @@ string linkedList::displayProducts(productNode* head) {
 
             file.close();
         }
-    }
 
         if (head == nullptr) {
             return "No products available.";
         }
 
 
-        string result = "ID\tName\t\tPrice\t     Quantity\n";
+        string result = "ID\t\t\tName\t\t\tPrice\t\t\tQuantity\n";
         productNode* temp = head;
         while (temp != nullptr) {
-            result += to_string(temp->productId) + "\t" +
-                    temp->productName + "\t\t" +
-                    to_string(temp->productPrice) + "\t" +
+            result += to_string(temp->productId) + "\t\t\t" +
+                    temp->productName + "\t\t\t" +
+                    to_string(temp->productPrice) + "\t\t\t" +
                     to_string(temp->productQuantity) + "\n";
             temp = temp->next;
         }
@@ -852,12 +972,12 @@ string linkedList::displayEmployees(employeeNode* head) {
             return "No employees available.";
         }
 
-        string result = "ID\tName\t\tPosition\tSalary\n";
+        string result = "ID\t\t\tName\t\t\tPosition\t\t\tSalary\n";
         employeeNode* temp = head;
         while (temp != nullptr) {
-            result += to_string(temp->employeeId) + "\t" +
-                    temp->employeeName + "\t\t" +
-                    temp->employeePosition + "\t" +
+            result += to_string(temp->employeeId) + "\t\t\t" +
+                    temp->employeeName + "\t\t\t" +
+                    temp->employeePosition + "\t\t\t" +
                     to_string(temp->employeeSalary) + "\n";
             temp = temp->next;
         }
