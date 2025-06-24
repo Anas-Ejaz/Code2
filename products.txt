@@ -1,3 +1,4 @@
 576	jgjjk	7	10
 45	juice	500	10
 12	bananas	123	12
+12	apple	45	10
