@@ -3,3 +3,4 @@
 12	bananas	123	12
 12	apple	45	10
 21	apple	123	12
+1234	banana	123	10
