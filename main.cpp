@@ -658,6 +658,7 @@ public:
     Fl_Input* emailInput;
     Fl_Input* addressInput;
 
+
     int signUpPage(){
         Fl_Window* mainWindow = new Fl_Window(900, 600, "E-Mart Sign Up");
         mainWindow->color(FL_BLACK);
@@ -936,7 +937,7 @@ void employee::goAdminPanel() {
 
  
 string linkedList::displayProducts(productNode* head) {      
-
+        
         ifstream file("products.txt");
         if (file.is_open()) {
             int id;
@@ -967,7 +968,8 @@ string linkedList::displayProducts(productNode* head) {
             temp = temp->next;
         }
         return result;
-    }    
+    }   
+    
 
 string linkedList::displayEmployees(employeeNode* head) {
         if (head == nullptr) {
