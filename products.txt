@@ -1,1 +1,5 @@
-66	Biscuits	40	19
+765	Juice	60	17
+55	bun	20	15
+2	Orange	70	5
+1	Milk	50	4
+7	Cola	210	10

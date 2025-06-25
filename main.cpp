@@ -98,7 +98,6 @@ public:
         queue::cartNode* outer = q.front;
 
         while (outer != nullptr) {
-            // Check if customer info already printed
             bool alreadyShown = false;
             queue::cartNode* checker = q.front;
             while (checker != outer) {
@@ -270,7 +269,7 @@ class linkedList{
     }
 
     void deleteEmployee(employeeNode*& head, int id) {
-        if (head == nullptr) return; // List is empty
+        if (head == nullptr) return;
         if (head->employeeId == id) {
             employeeNode* temp = head;
             head = head->next;
